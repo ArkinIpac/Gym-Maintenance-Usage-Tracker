@@ -47,13 +47,17 @@ public class Equipment {
         }
     }
 
-    // These never change after registration, so they are final.
-    private final String equipmentId;   // key of the hash table and MySQL primary key
-    private final String name;
-    private final Category category;
-    private final String location;      // floor zone, same name as a node in the floor-plan graph
+    // The ID never changes after registration: it is the hash table key and the MySQL
+    // primary key, so changing it would leave the old key behind in both. That's why it's final.
+    private final String equipmentId;
 
-    // Only these two change: condition after servicing, usage as the machine gets used.
+    // These can be corrected with the Edit button on the Equipment page.
+    // They are not keys in any structure, so changing them needs no re-indexing.
+    private String name;
+    private Category category;
+    private String location;            // floor zone, same name as a node in the floor-plan graph
+
+    // Condition changes after servicing (or an edit); usage as the machine gets used.
     private Condition condition;
     private int usageCount;             // key of the BST, tie-breaker in the heap
 
@@ -84,6 +88,17 @@ public class Equipment {
     public String getLocation() { return location; }
     public Condition getCondition() { return condition; }
     public int getUsageCount() { return usageCount; }
+
+    // Used by EquipmentStore.updateDetails() (the Edit button). The name is checked the same
+    // way as in the constructor, so an edit can't create a nameless machine.
+    public void setName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Equipment name cannot be empty.");
+        }
+        this.name = name.trim();
+    }
+    public void setCategory(Category category) { this.category = category; }
+    public void setLocation(String location) { this.location = location; }
 
     // Note: changing usage here does NOT update the BST. Other classes should go through
     // EquipmentStore.updateUsage(), which re-files the item under its new key.

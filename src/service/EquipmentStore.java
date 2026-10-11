@@ -103,6 +103,23 @@ public class EquipmentStore {
         usageIndex.insert(e);
     }
 
+    // ---------- Edit (the Edit button on the Equipment page) ----------
+    // Changes everything except the ID. Checks the input BEFORE changing anything, so a bad
+    // edit leaves the machine untouched.
+    //   name, category, location, condition -> not keys anywhere, just set them: O(1)
+    //   usage -> it's the BST key, so it goes through updateUsage() (delete + re-insert): O(log n)
+    // The array and hash table hold the same object, so they see the change automatically.
+    public void updateDetails(Equipment e, String name, Equipment.Category category, String location,
+                              Equipment.Condition condition, int usage) {
+        if (name == null || name.trim().isEmpty()) throw new IllegalArgumentException("Equipment name cannot be empty.");
+        if (usage < 0) throw new IllegalArgumentException("Usage count cannot be negative.");
+        e.setName(name);
+        e.setCategory(category);
+        e.setLocation(location);
+        updateCondition(e, condition);
+        if (usage != e.getUsageCount()) updateUsage(e, usage);   // only touch the BST if the key changed
+    }
+
     // Condition is not a key in any structure, so nothing needs re-indexing.
     // It still goes through here so all changes happen in one place.
     public void updateCondition(Equipment e, Equipment.Condition newCondition) {

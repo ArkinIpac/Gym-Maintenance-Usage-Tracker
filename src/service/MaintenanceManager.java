@@ -126,6 +126,17 @@ public class MaintenanceManager {
         return removed;
     }
 
+    // ---------- Edit: fix the heap after a machine's condition or usage changes ----------
+    // An edited machine that is waiting in the heap now has a different priority, so its
+    // spot may break the heap rule. We take it out and insert it again so it bubbles to the
+    // right place: O(n) to find it (a heap isn't sorted) + O(log n) to insert.
+    // Machines still in the queue need nothing: the queue is ordered by report time, not priority.
+    public boolean refreshPriority(Equipment e) {
+        if (!priorityHeap.remove(e)) return false;    // not in the heap
+        priorityHeap.insert(e);
+        return true;
+    }
+
     // ---------- Clear (reset buttons on the Maintenance page) ----------
     // Empties the heap without servicing anything. Each item is also removed from
     // inWorkflow so it can be flagged again. k extractMax calls = O(k log k).
