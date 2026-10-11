@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Benchmark",
+            "request": "launch",
+            "mainClass": "benchmark.Benchmark",
+            "projectName": "Gym-Equipment- Maintenance- Tracker_66a50a95"
+        },
+        {
+            "type": "java",
+            "name": "MainFrame",
+            "request": "launch",
+            "mainClass": "ui.MainFrame",
+            "projectName": "Gym-Equipment- Maintenance- Tracker_66a50a95"
+        },
+        {
+            "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "Main",
+            "projectName": "Gym-Equipment- Maintenance- Tracker_66a50a95"
+        },
+        {
+            "type": "jdk",
+            "request": "launch",
+            "name": "Launch Java App"
+        }
+    ]
+}

@@ -1,0 +1,15 @@
+# Compiled classes (VS Code rebuilds these)
+bin/
+out/
+*.class
+
+# Local MySQL password: each member makes their own from db.properties.example
+db.properties
+
+# Backups and local working files
+Claude outputs/
+*.bak
+
+# OS / editor clutter
+.DS_Store
+Thumbs.db

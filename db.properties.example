@@ -1,0 +1,5 @@
+# Copy this file to db.properties (same folder) and put in YOUR MySQL password.
+# db.properties is in .gitignore, so your password is never uploaded to GitHub.
+db.url=jdbc:mysql://localhost:3306/gym_equipment_tracker?rewriteBatchedStatements=true
+db.username=root
+db.password=YOUR_MYSQL_PASSWORD
