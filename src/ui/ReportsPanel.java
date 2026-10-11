@@ -242,6 +242,9 @@ public class ReportsPanel extends JPanel {
         JTextField min = Theme.textField("3000", "Min");
         JTextField max = Theme.textField("3050", "Max");
         JComboBox<String> order = Theme.comboBox(new String[]{"Inorder", "Preorder", "Postorder"});
+        // Switching the traversal redraws the visit-order numbers right away (no need to
+        // press Traverse again); Traverse still prints the full list in Output.
+        order.addActionListener(e -> bstView.showTraversal(order.getSelectedIndex()));
         JTextField limit = Theme.textField("30", "Keys to show");
         JButton range = Theme.primaryButton("Range query");
         JButton traverse = Theme.secondaryButton("Traverse");
