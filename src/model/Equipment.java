@@ -100,7 +100,7 @@ public class Equipment {
     public void setCategory(Category category) { this.category = category; }
     public void setLocation(String location) { this.location = location; }
 
-    // Note: changing usage here does NOT update the BST. Other classes should go through
+    //changing usage here does NOT update the BST. Other classes should go through
     // EquipmentStore.updateUsage(), which re-files the item under its new key.
     public void setCondition(Condition condition) { this.condition = condition; }
     public void incrementUsage() { this.usageCount++; }

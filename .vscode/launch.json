@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "DatasetImporter",
+            "request": "launch",
+            "mainClass": "db.DatasetImporter",
+            "projectName": "Gym-Equipment- Maintenance- Tracker_66a50a95"
+        },
+        {
+            "type": "java",
             "name": "Benchmark",
             "request": "launch",
             "mainClass": "benchmark.Benchmark",
