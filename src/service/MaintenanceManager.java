@@ -170,6 +170,19 @@ public class MaintenanceManager {
     // Read access
 
     public int getPendingCount() { return pendingQueue.size(); }
+
+    // Read-only copy of the queue, front first (for the web UI). A queue can only be read
+    // from the front, so we dequeue each item once and enqueue it again: same order after, O(k).
+    public Equipment[] getQueueSnapshot() {
+        int k = pendingQueue.size();
+        Equipment[] out = new Equipment[k];
+        for (int i = 0; i < k; i++) {
+            Equipment e = pendingQueue.dequeue();
+            out[i] = e;
+            pendingQueue.enqueue(e);
+        }
+        return out;
+    }
     public int getHeapSize() { return priorityHeap.size(); }
     public Equipment[] getHeapSnapshot() { return priorityHeap.snapshot(); }
 

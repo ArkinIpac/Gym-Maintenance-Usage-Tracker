@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GymCare · Maintenance OS</title>
+  <meta name="theme-color" content="#040506">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- What the glass blurs: drifting lime/green glows + a faint grid -->
+  <div class="backdrop" aria-hidden="true">
+    <div class="orb one"></div><div class="orb two"></div><div class="orb three"></div>
+    <div class="grid-lines"></div>
+  </div>
+
+  <div class="shell">
+    <aside class="sidebar glass" aria-label="Sidebar">
+      <div class="brand">
+        <img class="brand-mark" src="img/logo.svg" alt="" width="42" height="42">
+        <div>
+          <div class="brand-name">GymCare</div>
+          <div class="brand-sub">Maintenance OS</div>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Pages">
+        <a class="nav-item" href="#overview" data-page="overview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+          Overview
+        </a>
+        <a class="nav-item" href="#equipment" data-page="equipment">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Equipment <span class="nav-count" id="navCount">–</span>
+        </a>
+        <a class="nav-item" href="#maintenance" data-page="maintenance">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>
+          Maintenance <span class="nav-badge" id="navHeap" hidden>0</span>
+        </a>
+        <a class="nav-item" href="#reports" data-page="reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.2 7.2l7.6.6M16.6 10l-5 6M7 8.3l2.2 7.4"/></svg>
+          Floor &amp; reports
+        </a>
+        <a class="nav-item" href="#benchmark" data-page="benchmark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
+          Benchmarks
+        </a>
+      </nav>
+
+      <div class="side-box flat">
+        <div class="side-label">Pipeline</div>
+        <div class="side-row"><span>Queue</span><b id="sideQueue" style="color:var(--amber)">0</b></div>
+        <div class="side-row"><span>Heap</span><b id="sideHeap" style="color:var(--red-text)">0</b></div>
+        <div class="side-row"><span>Serviced</span><b id="sideServiced" style="color:var(--lime)">0</b></div>
+      </div>
+
+      <button class="btn ghost" id="openPalette" type="button" style="justify-content:flex-start;color:var(--text-3)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        Search <span class="kbd" style="margin-left:auto">Ctrl K</span>
+      </button>
+
+      <div class="db flat" id="dbStatus" role="status">
+        <span class="dot live"></span><span id="dbText">Connecting…</span>
+      </div>
+    </aside>
+
+    <main class="main" id="main" tabindex="-1">
+      <header class="page-head">
+        <div>
+          <div class="eyebrow" id="pageEyebrow"></div>
+          <h1 class="page-title" id="pageTitle">Overview</h1>
+        </div>
+        <div class="head-actions" id="headActions"></div>
+      </header>
+
+      <section class="page" id="page-overview" aria-label="Overview"></section>
+      <section class="page" id="page-equipment" aria-label="Equipment"></section>
+      <section class="page" id="page-maintenance" aria-label="Maintenance"></section>
+      <section class="page" id="page-reports" aria-label="Floor and reports"></section>
+      <section class="page" id="page-benchmark" aria-label="Benchmarks"></section>
+    </main>
+  </div>
+
+  <!-- Phone navigation -->
+  <nav class="tabbar glass" aria-label="Pages">
+    <a href="#overview" data-page="overview" aria-label="Overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg></a>
+    <a href="#equipment" data-page="equipment" aria-label="Equipment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></a>
+    <a href="#maintenance" data-page="maintenance" aria-label="Maintenance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></a>
+    <a href="#reports" data-page="reports" aria-label="Floor and reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.2 7.2l7.6.6M16.6 10l-5 6M7 8.3l2.2 7.4"/></svg></a>
+    <a href="#benchmark" data-page="benchmark" aria-label="Benchmarks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></a>
+  </nav>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- Confirm / info dialog -->
+  <div class="overlay" id="dialog" hidden>
+    <div class="dialog glass" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+      <h3 id="dialogTitle"></h3>
+      <div id="dialogBody"></div>
+      <div class="dialog-actions" id="dialogActions"></div>
+    </div>
+  </div>
+
+  <!-- Ctrl+K equipment search -->
+  <div class="overlay" id="palette" hidden>
+    <div class="palette glass" role="dialog" aria-modal="true" aria-label="Search equipment">
+      <label class="palette-input">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <span class="sr-only">Search equipment by ID, name or zone</span>
+        <input id="paletteInput" placeholder="Search EQ-04321, treadmill, Cardio Zone B…" autocomplete="off">
+        <span class="kbd">Esc</span>
+      </label>
+      <div class="palette-list" id="paletteList" role="listbox"></div>
+      <div class="palette-foot"><span>↑ ↓ to move</span><span>Enter to open</span><span>Exact IDs use the hash table: O(1)</span></div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/overview.js"></script>
+  <script src="js/equipment.js"></script>
+  <script src="js/maintenance.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/benchmark.js"></script>
+</body>
+</html>
