@@ -11,7 +11,7 @@ A system that lets gym staff register, search and delete equipment, flag broken 
 | Jay Mark Lampa | Queue + Linked List | `CustomQueue`, `CustomLinkedList`, `MaintenanceRecord` | Slide 1 |
 | Krissy Gomez | Heap + Priority | `CustomHeap`, `MaintenanceManager` | Slides 2, 14 |
 | Kahlil Mendoza | Hash Table + Graph representation + dataset | `CustomHashTable`, `CustomGraph` (adjacency list), `GymFloorPlan` | Slides 3, 13, 15 |
-| Rhobe Arkin Ipac | BFS/DFS, Sorting, Searching, Benchmark, Integration | `EquipmentStore`, `CustomGraph` (BFS/DFS), `Benchmark`, `db/*`, `web/*`, `Main`, `ConsoleDemo` | Slides 4, 5–8 (live demo), 9–10, 12 |
+| Rhobe Arkin Ipac | BFS/DFS, Sorting, Searching, Benchmark, Integration | `EquipmentStore`, `CustomGraph` (BFS/DFS), `Benchmark`, `db/*`, `web/*`, `Main` | Slides 4, 5–8 (live demo), 9–10, 12 |
 | John Benedict Jesalva | BST | `CustomBST`, usage index in `EquipmentStore` | Slide 11 |
 
 The Swing UI used at the defense (`ui.MainFrame` and its panels) was replaced by the web UI below. It is still in the git history: commit "Final defense version".
@@ -27,7 +27,6 @@ src/
   benchmark/    Benchmark
   web/          WebServer, ApiRoutes (every /api address), Json (tiny JSON writer)
   Main.java     start here: runs the web server and opens the browser
-  ConsoleDemo.java  text-only demo of every feature (the old Main)
 web/            the UI: index.html, css/style.css, js/ (one file per page), img/logo.svg
 data/equipment_dataset.csv   5,000 records
 lib/                         MySQL Connector/J
@@ -58,4 +57,4 @@ Press **Ctrl + K** anywhere to search equipment.
 
 If MySQL isn't running or `db.properties` is missing, the app still opens using the CSV and shows **Offline · CSV data** in the sidebar. Changes are not saved in that mode.
 
-The port comes from the `PORT` environment variable when it's set (Azure App Service sets it), otherwise 8080. The console demo used for the test cases is now `ConsoleDemo`.
+The port comes from the `PORT` environment variable when it's set (Azure App Service sets it), otherwise 8080. The console demo used for the defense test cases (old `Main`) is in the git history.
