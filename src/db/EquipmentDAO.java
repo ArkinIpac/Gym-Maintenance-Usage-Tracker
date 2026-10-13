@@ -30,7 +30,7 @@ import model.Equipment;
 // try-with-resources closes the Connection/Statement automatically, even on an error.
 public class EquipmentDAO {
 
-    // ---------- Create ----------
+    // Create
 
     public void insert(Equipment e) throws SQLException {
         String sql = "INSERT INTO equipment (equipment_id, name, category, location, condition_status, usage_count) "
@@ -47,7 +47,7 @@ public class EquipmentDAO {
         }
     }
 
-    // ---------- Read ----------
+    // Read
 
     public Equipment findById(String equipmentId) throws SQLException {
         String sql = "SELECT * FROM equipment WHERE equipment_id = ?";
@@ -72,7 +72,7 @@ public class EquipmentDAO {
         return results;
     }
 
-    // ---------- Update ----------
+    // Update
 
     public void update(Equipment e) throws SQLException {
         String sql = "UPDATE equipment SET name = ?, category = ?, location = ?, "
@@ -100,7 +100,7 @@ public class EquipmentDAO {
         }
     }
 
-    // ---------- Row mapping ----------
+    // Row mapping 
 
     // Turns one database row into an Equipment object. Shared by findById() and findAll()
     // so the column mapping is written only once.

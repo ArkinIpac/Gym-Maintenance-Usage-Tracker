@@ -46,7 +46,7 @@ public class EquipmentStore {
         usageIndex = new CustomBST();
     }
 
-    // ---------- Add ----------
+    // Add 
     // Array: O(1) amortized. Hash table: O(1) average. BST: O(log n) average.
     // The duplicate check uses the hash table, so it costs O(1) instead of scanning the array.
     public void addEquipment(Equipment e) {
@@ -68,7 +68,7 @@ public class EquipmentStore {
         equipment = bigger;
     }
 
-    // ---------- Delete: O(n) ----------
+    // Delete: O(n) 
     // The hash table finds the object in O(1), but the array still needs O(n):
     // we find its position, then shift every item after it one step left to close the gap.
     // Removed from all three structures. Returns null if the ID doesn't exist.
@@ -90,8 +90,8 @@ public class EquipmentStore {
         return target;
     }
 
-    // ===== [Jesalva] usage index: updateUsage() keeps the BST correct =====
-    // ---------- Updates ----------
+    // usage index: updateUsage() keeps the BST correct
+    // Updates 
 
     // Usage count is the BST key. If we changed it in place, the equipment would stay in the
     // node for its OLD count and BST searches would miss it. So: delete from the BST with the
@@ -103,7 +103,7 @@ public class EquipmentStore {
         usageIndex.insert(e);
     }
 
-    // ---------- Edit (the Edit button on the Equipment page) ----------
+    // Edit (the Edit button on the Equipment page)
     // Changes everything except the ID. Checks the input BEFORE changing anything, so a bad
     // edit leaves the machine untouched.
     //   name, category, location, condition -> not keys anywhere, just set them: O(1)
@@ -126,7 +126,7 @@ public class EquipmentStore {
         e.setCondition(newCondition);
     }
 
-    // ---------- Read access ----------
+    // Read access
 
     public int getCount() { return count; }
 
@@ -147,8 +147,8 @@ public class EquipmentStore {
     public CustomBST getUsageIndex() { return usageIndex; }
     public CustomHashTable<String, Equipment> getIdIndex() { return idIndex; }
 
-    // ===== [Arkin Ipac] searching and sorting =====
-    // ---------- Searching ----------
+    // [Arkin Ipac] searching and sorting 
+    // Searching
 
     // Hash table lookup: O(1) average. This is what the app uses for normal searches.
     public Equipment findById(String id) {
@@ -188,7 +188,7 @@ public class EquipmentStore {
         return usageIndex.search(usageCount);
     }
 
-    // ---------- Sorting (always on a COPY, the master array is never reordered) ----------
+    // Sorting (always on a COPY, the master array is never reordered)
 
     // Bubble sort by usage count.
     // Each pass compares neighbors and swaps them if they're in the wrong order, so the

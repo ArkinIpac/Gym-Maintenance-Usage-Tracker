@@ -61,7 +61,7 @@ public class CustomHashTable<K, V> {
         return (key.hashCode() & 0x7fffffff) % capacity;
     }
 
-    // ---------- Insert: O(1) average, O(n) worst ----------
+    // Insert: O(1) average, O(n) worst 
     // Worst case only happens if every key falls into the same bucket.
     public void put(K key, V value) {
         if (key == null) throw new IllegalArgumentException("Key cannot be null.");
@@ -82,7 +82,7 @@ public class CustomHashTable<K, V> {
         if (size > capacity * MAX_LOAD_FACTOR) resize(capacity * 2);
     }
 
-    // ---------- Search: O(1) average, O(n) worst ----------
+    // Search: O(1) average, O(n) worst
     // Go to the key's bucket, then walk its chain. Returns null if not found.
     public V get(K key) {
         if (key == null) return null;
@@ -96,7 +96,7 @@ public class CustomHashTable<K, V> {
 
     public boolean contains(K key) { return get(key) != null; }
 
-    // ---------- Delete: O(1) average, O(n) worst ----------
+    // Delete: O(1) average, O(n) worst 
     // Same idea as removing from a linked list:
     // if the key is the first in the chain, the bucket points to the next entry;
     // otherwise the previous entry skips over it.
@@ -118,7 +118,7 @@ public class CustomHashTable<K, V> {
         return false;
     }
 
-    // ---------- Resize (rehash): O(n) ----------
+    // Resize (rehash): O(n)
     // Every key has to be put again, because its bucket is (hash % capacity) and the
     // capacity just changed. This is expensive, but it only happens after many inserts,
     // so put() is still O(1) on average (amortized).
@@ -137,7 +137,7 @@ public class CustomHashTable<K, V> {
         }
     }
 
-    // ---------- For the collision demo on the Reports page ----------
+// For the collision demo on the Reports page
 
     // Which bucket a key goes to, e.g. EQ-00001 -> bucket 8144 (capacity 8,192).
     public int bucketIndexOf(K key) { return indexFor(key); }
@@ -172,7 +172,7 @@ public class CustomHashTable<K, V> {
         return longest;
     }
 
-    // ---------- Info ----------
+    // Info
     public int size() { return size; }
     public int getCapacity() { return capacity; }
     public int getResizeCount() { return resizeCount; }

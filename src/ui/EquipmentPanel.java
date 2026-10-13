@@ -80,7 +80,7 @@ public class EquipmentPanel extends JPanel {
         add(buildInventory(), BorderLayout.CENTER);
     }
 
-    // ================= Left: registration form =================
+    // Left: registration form
 
     private JComponent buildForm() {
         JPanel form = Theme.transparent(new GridBagLayout());
@@ -157,7 +157,7 @@ public class EquipmentPanel extends JPanel {
         selectById(e.getEquipmentId());
     }
 
-    // ================= Edit =================
+    // Edit
 
     private void editSelected() {
         int row = table.getSelectedRow();
@@ -269,7 +269,7 @@ public class EquipmentPanel extends JPanel {
         idField.requestFocusInWindow();
     }
 
-    // ================= Right: inventory table =================
+    // Right: inventory table 
 
     private JComponent buildInventory() {
         searchField = Theme.textField("Search ID, name or location");
@@ -408,7 +408,7 @@ public class EquipmentPanel extends JPanel {
         return names;
     }
 
-    // ================= Table model =================
+    // Table model 
 
     // Backs the JTable directly with an Equipment[] -- no copying into Vector rows.
     private static class InventoryModel extends AbstractTableModel {

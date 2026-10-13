@@ -135,7 +135,7 @@ public class Benchmark {
         return report.toString();
     }
 
-    // ---------- Timing helpers ----------
+    // Timing helpers
 
     // One warm-up run (not counted), then the average of SORT_REPEATS timed runs, in ms.
     private static double timeSortMs(SortTask task) {
@@ -200,7 +200,7 @@ public class Benchmark {
         Equipment[] run();
     }
 
-    // ---------- Saving results ----------
+    // Saving results
 
     private static void saveCsv(Row[] rows) {
         StringBuilder csv = new StringBuilder("size,bubble_usage_ms,insertion_usage_ms,insertion_id_ms,"
@@ -220,7 +220,7 @@ public class Benchmark {
 
     public static String getResultsFile() { return RESULTS_FILE; }
 
-    // ---------- Theoretical complexity (shown next to the measured results) ----------
+    // Theoretical complexity (shown next to the measured results)
 
     // {operation, structure, best, average, worst, space}
     public static final String[][] COMPLEXITY = {
@@ -235,7 +235,7 @@ public class Benchmark {
         {"Enqueue / dequeue", "Queue",          "O(1)",     "O(1)",     "O(1)",     "O(1)"},
         {"Bubble sort",       "Array",          "O(n)",     "O(n^2)",   "O(n^2)",   "O(1)"},
         {"Insertion sort",    "Array",          "O(n)",     "O(n^2)",   "O(n^2)",   "O(1)"},
-        {"BFS / DFS",         "Graph",          "-",        "O(V+E)",   "O(V+E)",   "O(V)"},
+        {"BFS / DFS",         "Graph",          "O(V+E)",   "O(V+E)",   "O(V+E)",   "O(V)"},
     };
 
     public static String complexityTable() {
@@ -249,7 +249,7 @@ public class Benchmark {
         return sb.toString();
     }
 
-    // ---------- Standalone run ----------
+    // Standalone run
     // Loads from MySQL; falls back to the CSV if the database isn't reachable.
     public static void main(String[] args) {
         List<Equipment> list;

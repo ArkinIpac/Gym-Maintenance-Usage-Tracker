@@ -50,7 +50,7 @@ public class MaintenanceManager {
         this.store = store;
     }
 
-    // ---------- Step 1: Flag (enqueue, O(1)) ----------
+    // Step 1: Flag (enqueue, O(1))
     // Returns false if this machine is already waiting, so the UI can show a message.
     public boolean flagForMaintenance(Equipment e) {
         if (inWorkflow.contains(e.getEquipmentId())) return false;
@@ -59,7 +59,7 @@ public class MaintenanceManager {
         return true;
     }
 
-    // ---------- Step 2: Promote (k dequeues + k heap inserts = O(k log n)) ----------
+    // Step 2: Promote (k dequeues + k heap inserts = O(k log n))
     // Empties the queue front to back into the heap. Returns how many were moved.
     public int promoteQueueToHeap() {
         int moved = 0;
@@ -79,7 +79,7 @@ public class MaintenanceManager {
         return priorityHeap.isEmpty() ? null : priorityHeap.peek();
     }
 
-    // ---------- Step 3: Service (extractMax, O(log n)) ----------
+    // Step 3: Service (extractMax, O(log n))
     // After servicing, the machine is set to GOOD and its usage counter goes back to 0,
     // meaning "uses since the last service".
     public MaintenanceRecord serviceNext(String note) {
@@ -109,7 +109,7 @@ public class MaintenanceManager {
         return record;
     }
 
-    // ---------- Cancel (when equipment is deleted while waiting) ----------
+    // Cancel (when equipment is deleted while waiting)
     // The heap has its own remove(). A queue can only remove from the front, so we
     // dequeue every item once and enqueue it again, except the one we're deleting.
     // Everyone else keeps their original order. O(k) for k items in the queue.
@@ -126,7 +126,7 @@ public class MaintenanceManager {
         return removed;
     }
 
-    // ---------- Edit: fix the heap after a machine's condition or usage changes ----------
+    // Edit: fix the heap after a machine's condition or usage changes
     // An edited machine that is waiting in the heap now has a different priority, so its
     // spot may break the heap rule. We take it out and insert it again so it bubbles to the
     // right place: O(n) to find it (a heap isn't sorted) + O(log n) to insert.
@@ -137,7 +137,7 @@ public class MaintenanceManager {
         return true;
     }
 
-    // ---------- Clear (reset buttons on the Maintenance page) ----------
+    // Clear (reset buttons on the Maintenance page)
     // Empties the heap without servicing anything. Each item is also removed from
     // inWorkflow so it can be flagged again. k extractMax calls = O(k log k).
     public int clearHeap() {
@@ -156,7 +156,7 @@ public class MaintenanceManager {
         while (!recentlyServiced.isEmpty()) recentlyServiced.removeLast();
     }
 
-    // ---------- Priority weights ----------
+    // Priority weights 
     // The app keeps the default weights (severity 10,000, usage 1). setPriorityWeights()
     // is only called by Main's invalid-input test; priorityOf() is used by the heap table.
     public void setPriorityWeights(long severityWeight, long usageWeight) {
@@ -167,7 +167,7 @@ public class MaintenanceManager {
     public long getSeverityWeight() { return priorityHeap.getSeverityWeight(); }
     public long getUsageWeight() { return priorityHeap.getUsageWeight(); }
 
-    // ---------- Read access ----------
+    // Read access
 
     public int getPendingCount() { return pendingQueue.size(); }
     public int getHeapSize() { return priorityHeap.size(); }

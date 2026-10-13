@@ -26,7 +26,6 @@ public class CustomBST {
 
     private class Node {
 
-
         int key;                                  // usage count of this node
         CustomLinkedList<Equipment> bucket;      // all equipment with exactly this usage count
         Node left, right;
@@ -41,7 +40,7 @@ public class CustomBST {
     private Node root;
     private int nodeCount;   // number of nodes (distinct usage counts), not number of equipment
 
-    // ---------- Insert: O(log n) average, O(n) worst ----------
+    // Insert: O(log n) average, O(n) worst
     // Worst case is when keys come in sorted order: every node goes to the right and the
     // tree turns into a straight line (basically a linked list).
     public void insert(Equipment e) {
@@ -59,19 +58,26 @@ public class CustomBST {
         int key = e.getUsageCount();
         if (key < node.key) {
             {
-            node.left = insert(node.left, e);  
-        }}else if (key > node.key) {
-            {
-            node.right = insert(node.right, e);  
-        }}else {
-            {
-            node.bucket.add(e);                  // same usage count: join the existing node's bucket
+                node.left = insert(node.left, e);
+            }
 
-    
-                }    }return node;
+        } else if (key > node.key) {
+            {
+                node.right = insert(node.right, e);
+            }
+
+        } else {
+            {
+                node.bucket.add(e);                  // same usage count: join the existing node's bucket
+
+            }
+
+        }
+
+        return node;
     }
 
-    // ---------- Search: O(log n) average ----------
+    // Search: O(log n) average 
     // Each comparison lets us ignore one whole side of the tree.
     // Done with a loop instead of recursion since we only follow one path.
     // Never returns null: an empty list means "nothing has this usage count".
@@ -80,33 +86,40 @@ public class CustomBST {
         while (current != null) {
             if (usageCount < current.key) {
                 {
-                current = current.left;  
-            }}else if (usageCount > current.key) {
+                    current = current.left;
+                }
+
+            } else if (usageCount > current.key) {
                 {
-                current = current.right;  
-            }}else {
+                    current = current.right;
+                }
+
+            } else {
                 {
-                return current.bucket;
-            }
+                    return current.bucket;
+                }
             }
         }
         return new CustomLinkedList<>();
     }
 
-    // ---------- Delete ----------
+    // Delete
     // Removes ONE equipment. It first leaves its node's bucket. The node itself is only
     // removed from the tree when its bucket becomes empty.
     public boolean delete(Equipment e) {
         CustomLinkedList<Equipment> bucket = search(e.getUsageCount());
         if (!bucket.remove(e)) {
             {
-            return false;              // not in the tree
+                return false;              // not in the tree
 
-    
-                }    }if (bucket.isEmpty()) {
-            {
-            root = deleteNode(root, e.getUsageCount());
+            }
+
         }
+
+        if (bucket.isEmpty()) {
+            {
+                root = deleteNode(root, e.getUsageCount());
+            }
         }
         return true;
     }
@@ -116,8 +129,8 @@ public class CustomBST {
     public int deleteRoot() {
         if (root == null) {
             {
-            return -1;
-        }
+                return -1;
+            }
         }
         int removedKey = root.key;
         root = deleteNode(root, removedKey);
@@ -135,8 +148,8 @@ public class CustomBST {
     private Node deleteNode(Node node, int key) {
         if (node == null) {
             {
-            return null;
-        }
+                return null;
+            }
         }
         if (key < node.key) {
             node.left = deleteNode(node.left, key);
@@ -144,33 +157,36 @@ public class CustomBST {
             node.right = deleteNode(node.right, key);
         } else {
             if (node.left == null) {
-               
+
                 nodeCount--;
-               
+
                 return node.right;
-           
+
             }   // case 1 (right is null too) or case 2
             if (node.right == null) {
-               
+
                 nodeCount--;
-               
+
                 return node.left;
-           
+
             }   // case 2
             Node successor = node.right;                                  // case 3
             while (successor.left != null) {
                 {
-                successor = successor.left;   // go right once, then all the way left
+                    successor = successor.left;   // go right once, then all the way left
 
-      
-                        }      }node.key = successor.key;
+                }
+
+            }
+
+            node.key = successor.key;
             node.bucket = successor.bucket;
             node.right = deleteNode(node.right, successor.key);          // nodeCount goes down inside this call
         }
         return node;
     }
 
-    // ---------- Traversals: all O(n), every node visited once ----------
+    // Traversals: all O(n), every node visited once
     // They return the keys (usage counts) in the order they were visited.
     // All three are recursive: the only difference is WHEN we record the current node.
     // Inorder = Left, Node, Right. On a BST this gives the keys in ascending order.
@@ -183,10 +199,13 @@ public class CustomBST {
     private void inorder(Node node, CustomLinkedList<Integer> out) {
         if (node == null) {
             {
-            return;                 // base case
+                return;                 // base case
 
-    
-                }    }inorder(node.left, out);
+            }
+
+        }
+
+        inorder(node.left, out);
         out.add(node.key);
         inorder(node.right, out);
     }
@@ -202,8 +221,8 @@ public class CustomBST {
     private void preorder(Node node, CustomLinkedList<Integer> out) {
         if (node == null) {
             {
-            return;
-        }
+                return;
+            }
         }
         out.add(node.key);
         preorder(node.left, out);
@@ -221,8 +240,8 @@ public class CustomBST {
     private void postorder(Node node, CustomLinkedList<Integer> out) {
         if (node == null) {
             {
-            return;
-        }
+                return;
+            }
         }
         postorder(node.left, out);
         postorder(node.right, out);
@@ -243,50 +262,48 @@ public class CustomBST {
     private void collectInRange(Node node, int min, int max, CustomLinkedList<Equipment> result) {
         if (node == null) {
             {
-            return;
-        }
+                return;
+            }
         }
         if (node.key > min) {
             {
-            collectInRange(node.left, min, max, result);
-        }
+                collectInRange(node.left, min, max, result);
+            }
         }
         if (node.key >= min && node.key <= max) {
             for (Equipment e : node.bucket) {
                 {
-                result.add(e);
-            }
+                    result.add(e);
+                }
             }
         }
         if (node.key < max) {
             {
-            collectInRange(node.right, min, max, result);
-        }
+                collectInRange(node.right, min, max, result);
+            }
         }
     }
 
     // ---------- Info for the Reports page ----------
     public int getRootKey() {
-       
-        return root == null ? -1 : root.key;
-   
-    }
 
+        return root == null ? -1 : root.key;
+
+    }
 
     public int getNodeCount() {
-       
-        return nodeCount;
-   
-    }
 
+        return nodeCount;
+
+    }
 
     public boolean isEmpty() {
-       
+
         return root == null;
-   
+
     }
 
-    // ---------- Read-only helpers for the tree drawing on the Reports page ----------
+    // Read-only helpers for the tree drawing on the Reports page
     // These only LOOK at the tree; they never change it.
     // Keys of the top `levels` levels, laid out like a heap array:
     // root at 0, children of index i at 2i+1 (left) and 2i+2 (right). -1 = no node there.
@@ -294,8 +311,8 @@ public class CustomBST {
         int[] out = new int[(1 << levels) - 1];
         for (int i = 0; i < out.length; i++) {
             {
-            out[i] = -1;
-        }
+                out[i] = -1;
+            }
         }
         fillLevels(root, 0, out);
         return out;
@@ -304,8 +321,8 @@ public class CustomBST {
     private void fillLevels(Node node, int i, int[] out) {
         if (node == null || i >= out.length) {
             {
-            return;
-        }
+                return;
+            }
         }
         out[i] = node.key;
         fillLevels(node.left, 2 * i + 1, out);
@@ -320,8 +337,8 @@ public class CustomBST {
             path.add(current.key);
             if (key == current.key) {
                 {
-                break;
-            }
+                    break;
+                }
             }
             current = key < current.key ? current.left : current.right;
         }
@@ -332,16 +349,16 @@ public class CustomBST {
     // Perfectly balanced would be about log2(n); a straight line would be n.
     // Ours: 26 for 2,868 nodes, so searches stay short even without balancing.
     public int height() {
-       
+
         return height(root);
-   
+
     }
 
     private int height(Node node) {
         if (node == null) {
             {
-            return 0;
-        }
+                return 0;
+            }
         }
         return 1 + Math.max(height(node.left), height(node.right));
     }

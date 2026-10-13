@@ -139,7 +139,7 @@ public class ReportsPanel extends JPanel {
         bstView.repaint();   // usage changes (servicing) can reshape the tree
     }
 
-    // ================= Sorting =================
+    // Sorting 
 
     private JComponent sortingTool() {
         JComboBox<String> algorithm = Theme.comboBox(new String[]{
@@ -175,7 +175,7 @@ public class ReportsPanel extends JPanel {
                         + "is near O(n) here because the data is already almost in ID order."));
     }
 
-    // ================= Searching =================
+    // Searching 
 
     private JComponent searchingTool() {
         JTextField id = Theme.textField("EQ-04321", "Equipment ID");
@@ -236,7 +236,7 @@ public class ReportsPanel extends JPanel {
         return String.format("%-11s %,9d ns   %s%n", label, ns, found == null ? "not found" : found.toString());
     }
 
-    // ================= BST =================
+    // BST 
 
     private JComponent bstTool() {
         JTextField min = Theme.textField("3000", "Min");
@@ -245,7 +245,6 @@ public class ReportsPanel extends JPanel {
         // Switching the traversal redraws the visit-order numbers right away (no need to
         // press Traverse again); Traverse still prints the full list in Output.
         order.addActionListener(e -> bstView.showTraversal(order.getSelectedIndex()));
-        JTextField limit = Theme.textField("30", "Keys to show");
         JButton range = Theme.primaryButton("Range query");
         JButton traverse = Theme.secondaryButton("Traverse");
 
@@ -265,8 +264,7 @@ public class ReportsPanel extends JPanel {
         });
 
         traverse.addActionListener(e -> {
-            int n = parseInt(limit, 30);
-            if (n < 0) return;
+            int n = 30; // Output only lists the first 30 keys so it stays readable
             CustomBST bst = store.getUsageIndex();
             int which = order.getSelectedIndex();
             bstView.showTraversal(which);
@@ -284,9 +282,8 @@ public class ReportsPanel extends JPanel {
         minMax.add(Theme.field("Min usage", min));
         minMax.add(Theme.field("Max usage", max));
 
-        JPanel traversal = Theme.transparent(new GridLayout(1, 2, 10, 0));
+        JPanel traversal = Theme.transparent(new GridLayout(1, 1, 10, 0));
         traversal.add(Theme.field("Traversal", order));
-        traversal.add(Theme.field("Keys to show", limit));
 
         JPanel travRow = Theme.transparent(new FlowLayout(FlowLayout.LEFT, 0, 0));
         travRow.add(traverse);
@@ -486,7 +483,7 @@ public class ReportsPanel extends JPanel {
         return sb.length() == 0 ? "(empty)" : sb.toString();
     }
 
-    // ================= Segmented control =================
+    // Segmented control 
 
     // A row of pill buttons where exactly one is selected (like tabs, but modern-looking).
     private static class Segmented extends JPanel {

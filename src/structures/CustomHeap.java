@@ -1,4 +1,3 @@
-
 // CustomHeap.java
 // Part of: Krissy Mae Gomez  (Heap + Priority Processing)
 // Presented in: Slides 5-8 (Arkin Ipac) - heap order in the demo;
@@ -6,8 +5,6 @@
 // What it does: Max-heap that ranks flagged equipment so the most urgent
 //               machine is always serviced first.
 // Used by: MaintenanceManager
-
-
 package structures;
 
 import model.Equipment;
@@ -28,7 +25,7 @@ import model.Equipment;
 // unsorted array for the max costs O(n) per service. The heap does both in O(log n).
 public class CustomHeap {
 
-    // ---------- Priority formula ----------
+    // Priority formula 
     //   priority = severity * severityWeight + usageCount * usageWeight
     //   severity = condition.ordinal():  EXCELLENT 0, GOOD 1, FAIR 2, POOR 3, CRITICAL 4
     //
@@ -66,37 +63,45 @@ public class CustomHeap {
         return e.getCondition().ordinal() * severityWeight + e.getUsageCount() * usageWeight;
     }
 
-    // ---------- Insert: O(log n) ----------
+    //  Insert: O(log n) 
     // Put the new item in the next free slot (bottom of the tree), then bubble it up:
     // keep swapping with its parent while it has a higher priority.
     public void insert(Equipment e) {
-        if (size == items.length) grow();
+        if (size == items.length) {
+            grow();
+        }
         items[size] = e;
         bubbleUp(size);
         size++;
     }
 
-    // ---------- Remove the most urgent: O(log n) ----------
+    // Remove the most urgent: O(log n) 
     // 1. Save the root (index 0), that is our answer.
     // 2. Move the LAST item into the root so the tree has no hole.
     // 3. Bubble it down until the heap rule holds again.
     public Equipment extractMax() {
-        if (size == 0) throw new IllegalStateException("Heap is empty.");
+        if (size == 0) {
+            throw new IllegalStateException("Heap is empty.");
+        }
         Equipment max = items[0];
         size--;
         items[0] = items[size];
         items[size] = null;
-        if (size > 0) bubbleDown(0);
+        if (size > 0) {
+            bubbleDown(0);
+        }
         return max;
     }
 
     // Look at the most urgent item without removing it. O(1).
     public Equipment peek() {
-        if (size == 0) throw new IllegalStateException("Heap is empty.");
+        if (size == 0) {
+            throw new IllegalStateException("Heap is empty.");
+        }
         return items[0];
     }
 
-    // ---------- Remove a specific item: O(n) find + O(log n) fix ----------
+    // Remove a specific item: O(n) find + O(log n) fix
     // Used when equipment is deleted while it is still waiting in the heap.
     // A heap is not sorted, so the only way to find an item is to scan the array.
     public boolean remove(Equipment e) {
@@ -117,7 +122,7 @@ public class CustomHeap {
         return false;
     }
 
-    // ---------- Change the weights (not used by the app's screens; tested in Main) ----------
+    //  Change the weights (not used by the app's screens; tested in Main)
     // New weights = new priorities, so the old order may be wrong. We rebuild it with
     // HEAPIFY: bubble down every parent, starting from the last parent (size/2 - 1) up to
     // the root. Leaves (the second half of the array) have no children, so we skip them.
@@ -128,13 +133,26 @@ public class CustomHeap {
         }
         severityWeight = newSeverityWeight;
         usageWeight = newUsageWeight;
-        for (int i = size / 2 - 1; i >= 0; i--) bubbleDown(i);
+        for (int i = size / 2 - 1; i >= 0; i--) {
+            bubbleDown(i);
+        }
     }
 
-    public long getSeverityWeight() { return severityWeight; }
-    public long getUsageWeight() { return usageWeight; }
-    public boolean isEmpty() { return size == 0; }
-    public int size() { return size; }
+    public long getSeverityWeight() {
+        return severityWeight;
+    }
+
+    public long getUsageWeight() {
+        return usageWeight;
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    public int size() {
+        return size;
+    }
 
     // A copy of the array in heap order (not sorted), so the UI can display it
     // without being able to change the real heap.
@@ -144,14 +162,15 @@ public class CustomHeap {
         return copy;
     }
 
-    // ---------- Helpers ----------
-
+    //  Helpers 
     // Move item i up while it is bigger than its parent.
     private void bubbleUp(int i) {
         while (i > 0) {
             int parent = (i - 1) / 2;
-            if (priorityOf(items[i]) <= priorityOf(items[parent])) break;   // parent is bigger: done
-            swap(i, parent);
+            if (priorityOf(items[i]) <= priorityOf(items[parent])) {
+                break;   // parent is bigger: done
+
+                        }swap(i, parent);
             i = parent;
         }
     }
@@ -163,10 +182,16 @@ public class CustomHeap {
             int left = 2 * i + 1;
             int right = 2 * i + 2;
             int largest = i;
-            if (left < size && priorityOf(items[left]) > priorityOf(items[largest])) largest = left;
-            if (right < size && priorityOf(items[right]) > priorityOf(items[largest])) largest = right;
-            if (largest == i) break;                                         // already bigger than both children
-            swap(i, largest);
+            if (left < size && priorityOf(items[left]) > priorityOf(items[largest])) {
+                largest = left;
+            }
+            if (right < size && priorityOf(items[right]) > priorityOf(items[largest])) {
+                largest = right;
+            }
+            if (largest == i) {
+                break;                                         // already bigger than both children
+
+                        }swap(i, largest);
             i = largest;
         }
     }

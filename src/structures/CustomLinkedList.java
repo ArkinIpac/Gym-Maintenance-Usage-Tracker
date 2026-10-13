@@ -63,7 +63,7 @@ public class CustomLinkedList<T> implements Iterable<T> {
         size++;
     }
 
-    // ---------- Search ----------
+    // Search 
 
     // O(n): start at head and check each node. Returns -1 if not found
     // (instead of throwing), so the caller can just show "not found".
@@ -90,7 +90,7 @@ public class CustomLinkedList<T> implements Iterable<T> {
         return current.data;
     }
 
-    // ---------- Delete ----------
+    // Delete 
 
     // O(n): find the first node holding 'target' and unlink it. Returns false if missing.
     // We keep 'prev' while walking because, in a singly linked list, the only way to
@@ -137,7 +137,7 @@ public class CustomLinkedList<T> implements Iterable<T> {
     public int size() { return size; }
     public boolean isEmpty() { return size == 0; }
 
-    // ---------- Traversal ----------
+    // Traversal 
 
     // Walks from head to tail, one node at a time. This is what for-each loops call.
     @Override

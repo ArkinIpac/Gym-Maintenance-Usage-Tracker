@@ -98,7 +98,7 @@ public class MaintenancePanel extends JPanel {
         return row;
     }
 
-    // ================= Workflow steps =================
+    // Workflow steps
 
     private JComponent buildWorkflow() {
         JButton flag = Theme.primaryButton("Flag");
@@ -231,7 +231,7 @@ public class MaintenancePanel extends JPanel {
             log.accept(id + " has no service history yet this session.");
     }
 
-    // ================= Tables =================
+    // Tables 
 
     private JComponent buildHeapTable() {
         JTable table = Theme.hintTable(heapModel, "Heap is empty. Flag equipment, then click Promote.");

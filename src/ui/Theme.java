@@ -67,7 +67,7 @@ public final class Theme {
         }
     }
 
-    // ================= Fonts =================
+    //  Fonts 
     // Uses the best font installed on the machine: Segoe UI on Windows, Inter/Roboto if
     // present, otherwise Java's default sans-serif.
     private static final String UI_FAMILY   = pickFamily("Segoe UI", "Inter", "Roboto", "Helvetica Neue", "SansSerif");
@@ -162,7 +162,7 @@ public final class Theme {
         return l;
     }
 
-    // ================= Buttons =================
+    // Buttons
 
     public enum Variant { PRIMARY, SECONDARY, GHOST, DANGER }
 
@@ -233,7 +233,7 @@ public final class Theme {
         }
     }
 
-    // ================= Cards =================
+    //Cards 
 
     // A rounded surface with a thin border -- the basic building block of every page.
     public static class Card extends JPanel {
@@ -324,7 +324,7 @@ public final class Theme {
         return p;
     }
 
-    // ================= Inputs =================
+    //Inputs 
 
     // Rounded outline that turns lime while its component has keyboard focus.
     static class RoundBorder extends AbstractBorder {
@@ -510,7 +510,7 @@ public final class Theme {
         return area;
     }
 
-    // ================= Tables =================
+    // Tables 
 
     // Dark zebra-striped table with roomy rows, no grid lines, and a quiet header.
     public static void styleTable(JTable table) {
@@ -613,7 +613,7 @@ public final class Theme {
         }
     }
 
-    // ================= Scrolling =================
+    // Scrolling 
 
     // Scroll pane with no border and slim, rounded dark scrollbars.
     public static JScrollPane scroll(JComponent content) {

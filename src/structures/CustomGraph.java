@@ -29,7 +29,7 @@ public class CustomGraph {
     private final CustomLinkedList<String> zones = new CustomLinkedList<>();  // all zones, in the order added
     private int edgeCount;
 
-    // ---------- Building and editing the graph ----------
+    // Building and editing the graph 
 
     // Adds a zone with no walkways yet. Returns false if the zone already exists.
     public boolean addZone(String zone) {
@@ -54,7 +54,7 @@ public class CustomGraph {
         return true;
     }
 
-    // Closes a walkway (live change: "remove one edge and rerun BFS").
+    
     // Removed from both lists, same reason as addEdge.
     public boolean removeEdge(String zoneA, String zoneB) {
         CustomLinkedList<String> a = adjacency.get(zoneA);
@@ -76,9 +76,9 @@ public class CustomGraph {
         return n != null ? n : new CustomLinkedList<>();
     }
 
-    // ===== [Arkin Ipac] BFS / DFS part starts here =====
+    // [Arkin Ipac] BFS / DFS part starts here 
 
-    // ---------- BFS (Breadth-First Search): O(V + E) time, O(V) space ----------
+    // BFS (Breadth-First Search): O(V + E) time, O(V) space 
     // Visits zones level by level: start, then all zones 1 walkway away, then 2 away, etc.
     //   - CustomQueue holds the zones waiting to be visited (FIFO = level by level)
     //   - CustomHashTable 'visited' makes sure each zone is added to the queue only once
@@ -161,7 +161,7 @@ public class CustomGraph {
         return result;
     }
 
-    // ---------- DFS (Depth-First Search): O(V + E) time, O(V) space ----------
+    // DFS (Depth-First Search): O(V + E) time, O(V) space
     // Goes as far as possible down one path, and only backtracks at a dead end.
     // We use RECURSION instead of a stack class: every call waits on Java's call stack,
     // and when a call returns, that is the backtrack.

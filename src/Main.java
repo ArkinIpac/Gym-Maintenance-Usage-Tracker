@@ -42,7 +42,7 @@ public class Main {
         MaintenanceManager manager = new MaintenanceManager(store);
         System.out.println("Records in store: " + store.getCount());
 
-        // ===== 2. Add, search, and delete records =====
+        // ===== 2. Add, search, and delete records
         section("2. Add, search, and delete");
         Equipment added = new Equipment("EQ-09001", "Demo Rowing Machine", Equipment.Category.CARDIO,
                 "Cardio Zone A", Equipment.Condition.FAIR, 150);
