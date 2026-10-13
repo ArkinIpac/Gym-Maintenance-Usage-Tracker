@@ -11,7 +11,7 @@ A system that lets gym staff register, search and delete equipment, flag broken 
 | Jay Mark Lampa | Queue + Linked List | `CustomQueue`, `CustomLinkedList`, `MaintenanceRecord` | Slide 1 |
 | Krissy Gomez | Heap + Priority | `CustomHeap`, `MaintenanceManager` | Slides 2, 14 |
 | Kahlil Mendoza | Hash Table + Graph representation + dataset | `CustomHashTable`, `CustomGraph` (adjacency list), `GymFloorPlan` | Slides 3, 13, 15 |
-| Rhobe Arkin Ipac | BFS/DFS, Sorting, Searching, Benchmark, Integration | `EquipmentStore`, `CustomGraph` (BFS/DFS), `Benchmark`, `db/*`, `web/*`, `Main` | Slides 4, 5–8 (live demo), 9–10, 12 |
+| Rhobe Arkin Ipac | BFS/DFS, Sorting, Searching, Benchmark, Integration | `EquipmentStore`, `CustomGraph` (BFS/DFS), `Benchmark`, `db/*`, `web/*`, `Main`, `ConsoleDemo` | Slides 4, 5–8 (live demo), 9–10, 12 |
 | John Benedict Jesalva | BST | `CustomBST`, usage index in `EquipmentStore` | Slide 11 |
 
 The Swing UI used at the defense (`ui.MainFrame` and its panels) was replaced by the web UI below. It is still in the git history: commit "Final defense version".
@@ -25,8 +25,9 @@ src/
   service/      EquipmentStore, MaintenanceManager, GymFloorPlan
   db/           DatabaseConnector, EquipmentDAO, DatasetImporter
   benchmark/    Benchmark
-  web/          WebServer (start here), ApiRoutes (every /api address), Json (tiny JSON writer)
-  Main.java     console demo
+  web/          WebServer, ApiRoutes (every /api address), Json (tiny JSON writer)
+  Main.java     start here: runs the web server and opens the browser
+  ConsoleDemo.java  text-only demo of every feature (the old Main)
 web/            the UI: index.html, css/style.css, js/ (one file per page), img/logo.svg
 data/equipment_dataset.csv   5,000 records
 lib/                         MySQL Connector/J
@@ -53,8 +54,8 @@ Press **Ctrl + K** anywhere to search equipment.
 1. Install the **Extension Pack for Java** in VS Code and open this folder. `.vscode/settings.json` already points to `src`, `bin` and `lib`.
 2. **MySQL password:** copy `db.properties.example` to `db.properties` (same folder) and put in your MySQL root password. `db.properties` is in `.gitignore`, so it is never uploaded.
 3. **Database (first time only):** run `schema.sql` in MySQL Workbench, then run `db.DatasetImporter` once. It loads the 5,000 rows.
-4. Open `src/web/WebServer.java` and click **Run**, then open **http://localhost:8080**. Run it from the project folder so it finds `web/`, `data/` and `db.properties`.
+4. Open `src/Main.java` and click **Run**. It starts the web server and opens **http://localhost:8080** in your browser. Run it from the project folder so it finds `web/`, `data/` and `db.properties`. Stop it with the red square in VS Code.
 
 If MySQL isn't running or `db.properties` is missing, the app still opens using the CSV and shows **Offline · CSV data** in the sidebar. Changes are not saved in that mode.
 
-The port comes from the `PORT` environment variable when it's set (Azure App Service sets it), otherwise 8080. `Main` is still there as a console demo.
+The port comes from the `PORT` environment variable when it's set (Azure App Service sets it), otherwise 8080. The console demo used for the test cases is now `ConsoleDemo`.
