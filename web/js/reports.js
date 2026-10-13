@@ -164,8 +164,8 @@ App.pages.reports = (() => {
     });
     for (let i = 0; i < path.length - 1; i++) {
       const a = path[i], b = path[i + 1];
-      s += `<line x1="${gx(a)}" y1="${gy(a)}" x2="${gx(b)}" y2="${gy(b)}" stroke="#C6F432" stroke-width="10" stroke-linecap="round" opacity=".25" filter="url(#glowF)"/>`;
-      s += `<line class="${dashed ? "flow" : ""}" x1="${gx(a)}" y1="${gy(a)}" x2="${gx(b)}" y2="${gy(b)}" stroke="#C6F432" stroke-width="4" stroke-linecap="round"/>`;
+      s += `<line x1="${gx(a)}" y1="${gy(a)}" x2="${gx(b)}" y2="${gy(b)}" stroke="#C8FF00" stroke-width="10" stroke-linecap="round" opacity=".25" filter="url(#glowF)"/>`;
+      s += `<line class="${dashed ? "flow" : ""}" x1="${gx(a)}" y1="${gy(a)}" x2="${gx(b)}" y2="${gy(b)}" stroke="#C8FF00" stroke-width="4" stroke-linecap="round"/>`;
     }
     graph.zones.forEach((z) => {
       if (!POS[z]) return;
@@ -174,14 +174,14 @@ App.pages.reports = (() => {
       const ring = 8 + (crit / maxCrit) * 18;
       if (crit) s += `<circle cx="${x}" cy="${y}" r="${ring + 6}" fill="rgba(242,92,97,${0.05 + (crit / maxCrit) * 0.12})"/>`;
       if (step >= 0) {
-        s += `<circle cx="${x}" cy="${y}" r="16" fill="${dashed ? "#0B0D10" : "#C6F432"}" stroke="#C6F432" stroke-width="3"/>
-              <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="13" font-weight="800" fill="${dashed ? "#C6F432" : "#0A0C05"}">${step + 1}</text>`;
+        s += `<circle cx="${x}" cy="${y}" r="16" fill="${dashed ? "#111111" : "#C8FF00"}" stroke="#C8FF00" stroke-width="3"/>
+              <text x="${x}" y="${y + 5}" text-anchor="middle" font-size="13" font-weight="800" fill="${dashed ? "#C8FF00" : "#0A0A0A"}">${step + 1}</text>`;
       } else {
-        s += `<circle cx="${x}" cy="${y}" r="9" fill="#101317" stroke="${isEnd ? "#C6F432" : crit > maxCrit * 0.6 ? "#FF6B70" : "#5E6772"}" stroke-width="${isEnd ? 3 : 2}"/>`;
+        s += `<circle cx="${x}" cy="${y}" r="9" fill="#141414" stroke="${isEnd ? "#C8FF00" : crit > maxCrit * 0.6 ? "#FF5A5A" : "#5C5C5C"}" stroke-width="${isEnd ? 3 : 2}"/>`;
       }
       const anchor = POS[z][0] >= 9.4 ? "end" : POS[z][0] <= 0.2 ? "start" : "middle";
       const ly = POS[z][1] > 6 ? y + 36 : y - 24;
-      s += `<text class="zlabel" x="${x}" y="${ly}" text-anchor="${anchor}" font-size="13" font-weight="${step >= 0 || isEnd ? 700 : 500}" fill="${step >= 0 || isEnd ? "#EDF0F2" : "#98A1AC"}">${esc(z)}${crit ? ` · ${crit}` : ""}</text>`;
+      s += `<text class="zlabel" x="${x}" y="${ly}" text-anchor="${anchor}" font-size="13" font-weight="${step >= 0 || isEnd ? 700 : 500}" fill="${step >= 0 || isEnd ? "#FFFFFF" : "#8F8F8F"}">${esc(z)}${crit ? ` · ${crit}` : ""}</text>`;
     });
     $("#gSvg").innerHTML = s;
   }
@@ -282,16 +282,16 @@ App.pages.reports = (() => {
         if (c < L.length && L[c] >= 0) {
           const [cx, cy] = pos(c);
           const lit = bstMark.path.includes(k) && bstMark.path.includes(L[c]);
-          lines += `<line x1="${x}" y1="${y}" x2="${cx}" y2="${cy}" stroke="${lit ? "#C6F432" : "rgba(255,255,255,0.14)"}" stroke-width="${lit ? 3 : 1.5}"/>`;
+          lines += `<line x1="${x}" y1="${y}" x2="${cx}" y2="${cy}" stroke="${lit ? "#C8FF00" : "rgba(255,255,255,0.14)"}" stroke-width="${lit ? 3 : 1.5}"/>`;
         }
       });
       const r = i < 15 ? 20 : 15, on = hit(k);
-      nodes += `<circle cx="${x}" cy="${y}" r="${r}" fill="${on ? "#C6F432" : i === 0 ? "rgba(198,244,50,0.15)" : "#14171B"}" stroke="${on || i === 0 ? "#C6F432" : "rgba(255,255,255,0.18)"}" stroke-width="1.5"/>
-        <text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${i < 15 ? 11.5 : 9.5}" font-weight="700" fill="${on ? "#0A0C05" : "#EDF0F2"}">${k}</text>
-        <text x="${x + r - 2}" y="${y - r + 2}" font-size="10" font-weight="700" fill="#C6F432">${rank[i] || ""}</text>`;
+      nodes += `<circle cx="${x}" cy="${y}" r="${r}" fill="${on ? "#C8FF00" : i === 0 ? "rgba(200,255,0,0.15)" : "#161616"}" stroke="${on || i === 0 ? "#C8FF00" : "rgba(255,255,255,0.18)"}" stroke-width="1.5"/>
+        <text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${i < 15 ? 11.5 : 9.5}" font-weight="700" fill="${on ? "#0A0A0A" : "#FFFFFF"}">${k}</text>
+        <text x="${x + r - 2}" y="${y - r + 2}" font-size="10" font-weight="700" fill="#C8FF00">${rank[i] || ""}</text>`;
     });
     const shown = L.filter((k) => k >= 0).length;
-    $("#bSvg").innerHTML = lines + nodes + `<text x="${W / 2}" y="${top + 4 * gap + 40}" text-anchor="middle" font-size="12" fill="#6F7883">… ${fmt(tree.nodes - shown)} more nodes below · height ${tree.height}</text>`;
+    $("#bSvg").innerHTML = lines + nodes + `<text x="${W / 2}" y="${top + 4 * gap + 40}" text-anchor="middle" font-size="12" fill="#6B6B6B">… ${fmt(tree.nodes - shown)} more nodes below · height ${tree.height}</text>`;
   }
 
   async function runRange() {

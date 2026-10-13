@@ -3,16 +3,16 @@
 //   01 QUEUE (FIFO)  --promote-->  02 PRIORITY HEAP  --extractMax-->  03 SERVICED (linked list)
 
 App.pages.maintenance = (() => {
-  const COND_TEXT = { EXCELLENT: "#3DD68C", GOOD: "#B8EE57", FAIR: "#F5D042", POOR: "#F7A55C", CRITICAL: "#FF8A8E" };
+  const COND_TEXT = { EXCELLENT: "#C8FF00", GOOD: "#A8D100", FAIR: "#BDBDBD", POOR: "#FFAA5C", CRITICAL: "#FF7A7A" };
   let state = null;
 
   function init() {
     $("#page-maintenance").innerHTML = `
       <section class="pipeline glass" aria-label="Pipeline">
         <div class="pipe-stat"><b id="mQueue" style="color:var(--amber)">0</b>in queue</div>
-        <div class="pipe-link"><svg viewBox="0 0 200 10" preserveAspectRatio="none" aria-hidden="true"><line class="flow" x1="0" y1="5" x2="200" y2="5" stroke="#C6F432" stroke-width="3" stroke-linecap="round"/></svg>promote · O(k log n)</div>
+        <div class="pipe-link"><svg viewBox="0 0 200 10" preserveAspectRatio="none" aria-hidden="true"><line class="flow" x1="0" y1="5" x2="200" y2="5" stroke="#C8FF00" stroke-width="3" stroke-linecap="round"/></svg>promote · O(k log n)</div>
         <div class="pipe-stat"><b id="mHeap" class="gtext" style="font-size:44px;font-weight:800;line-height:1">0</b>in max-heap</div>
-        <div class="pipe-link"><svg viewBox="0 0 200 10" preserveAspectRatio="none" aria-hidden="true"><line class="flow" x1="0" y1="5" x2="200" y2="5" stroke="#C6F432" stroke-width="3" stroke-linecap="round"/></svg>extractMax · O(log n)</div>
+        <div class="pipe-link"><svg viewBox="0 0 200 10" preserveAspectRatio="none" aria-hidden="true"><line class="flow" x1="0" y1="5" x2="200" y2="5" stroke="#C8FF00" stroke-width="3" stroke-linecap="round"/></svg>extractMax · O(log n)</div>
         <div class="pipe-stat"><b id="mServiced" style="color:var(--lime)">0</b>serviced</div>
       </section>
 

@@ -4,7 +4,7 @@
 // Everything comes from one call: GET /api/overview.
 
 App.pages.overview = (() => {
-  const COND_COLORS = { EXCELLENT: "#3DD68C", GOOD: "#A6E13B", FAIR: "#F5D042", POOR: "#F5933D", CRITICAL: "#F25C61" };
+  const COND_COLORS = { EXCELLENT: "#C8FF00", GOOD: "#8CB300", FAIR: "#BDBDBD", POOR: "#FF9A3C", CRITICAL: "#FF4545" };
   const CAT_CODES = { CARDIO: "CRD", STRENGTH_MACHINE: "STR", FREE_WEIGHT: "FRW", FUNCTIONAL: "FNC", ACCESSORY: "ACC" };
 
   function init() {

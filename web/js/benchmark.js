@@ -3,8 +3,8 @@
 // a table and two charts, next to the theoretical Big-O table.
 
 App.pages.benchmark = (() => {
-  const SORTS = [["bubbleMs", "Bubble", "#FF6B70"], ["insertionMs", "Insertion", "#C6F432"], ["insertionIdMs", "Insertion by ID", "#3DD68C"]];
-  const SEARCHES = [["linearNs", "Linear", "#FF6B70"], ["binaryNs", "Binary", "#F5C451"], ["bstNs", "BST", "#3DD68C"], ["hashNs", "Hash", "#C6F432"]];
+  const SORTS = [["bubbleMs", "Bubble", "#5C5C5C"], ["insertionMs", "Insertion", "#FFFFFF"], ["insertionIdMs", "Insertion by ID", "#C8FF00"]];
+  const SEARCHES = [["linearNs", "Linear", "#5C5C5C"], ["binaryNs", "Binary", "#9E9E9E"], ["bstNs", "BST", "#FFFFFF"], ["hashNs", "Hash", "#C8FF00"]];
   let loaded = false;
 
   const legend = (series) => `<div style="display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--text-2)">${series.map(([, l, c]) =>
@@ -73,7 +73,7 @@ App.pages.benchmark = (() => {
     for (let i = 0; i <= 4; i++) {
       const y = top + plotH - (plotH * i) / 4;
       const v = logScale ? Math.pow(10, lo + ((hi - lo) * i) / 4) : (max * i) / 4;
-      s += `<line x1="${left}" x2="${W - 10}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,0.06)"/><text x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#6F7883">${logScale ? fmt(Math.round(v)) : v.toFixed(0)}</text>`;
+      s += `<line x1="${left}" x2="${W - 10}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,0.06)"/><text x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#6B6B6B">${logScale ? fmt(Math.round(v)) : v.toFixed(0)}</text>`;
     }
     const gw = plotW / rows.length, bw = Math.min(22, (gw - 16) / series.length);
     rows.forEach((r, gi) => {
@@ -83,7 +83,7 @@ App.pages.benchmark = (() => {
         s += `<rect x="${x0 + si * bw + 1}" y="${top + plotH - h}" width="${bw - 2}" height="${h}" rx="4" fill="${color}"
           style="transform-box:fill-box;transform-origin:bottom;animation:barUp .8s var(--ease) ${(gi * series.length + si) * 0.03}s both"><title>${name} · n=${fmt(r.size)} · ${label(r[k])}</title></rect>`;
       });
-      s += `<text x="${left + gi * gw + gw / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="#98A1AC">n = ${fmt(r.size)}</text>`;
+      s += `<text x="${left + gi * gw + gw / 2}" y="${H - 10}" text-anchor="middle" font-size="11" fill="#8F8F8F">n = ${fmt(r.size)}</text>`;
     });
     $(sel).innerHTML = `<style>@keyframes barUp{from{transform:scaleY(0)}to{transform:scaleY(1)}}</style>` + s;
   }
