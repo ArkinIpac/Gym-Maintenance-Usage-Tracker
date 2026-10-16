@@ -1,5 +1,6 @@
 package web;
 
+import auth.LoginThrottle;
 import auth.Role;
 import auth.SessionManager;
 import auth.User;
@@ -12,7 +13,7 @@ import java.util.Map;
 //   /api/auth/login      public
 //   /api/auth/logout     signed in
 //   /api/auth/password   signed in: change your own password
-//   /api/users           admin: list, /add, /role, /delete
+//   /api/users           admin: list, /add, /role, /password, /delete
 public class AuthRoutes {
 
     // A response plus an optional cookie to set (a new session, or clearing one).
@@ -30,6 +31,7 @@ public class AuthRoutes {
     private final UserStore users;
     private final SessionManager sessions;
     private final ApiRoutes api;           // for the activity feed
+    private final LoginThrottle throttle = new LoginThrottle();
 
     public AuthRoutes(UserStore users, SessionManager sessions, ApiRoutes api) {
         this.users = users;
@@ -37,17 +39,18 @@ public class AuthRoutes {
         this.api = api;
     }
 
-    // current is the signed-in user, or null.
-    public Result handle(String method, String path, Map<String, String> p, User current, String token) {
+    // current is the signed-in user, or null. address is the caller's IP, for the login throttle.
+    public Result handle(String method, String path, Map<String, String> p, User current, String token, String address) {
         boolean post = "POST".equalsIgnoreCase(method);
         try {
             if (path.equals("/api/auth/state")) return plain(state(current));
             boolean listing = path.equals("/api/users");
             if (!post && !listing) return plain(error(405, "Use POST for " + path));
+            if (listing && post) return plain(error(405, "Use GET for " + path));
 
             switch (path) {
                 case "/api/auth/setup":    return setup(p);
-                case "/api/auth/login":    return login(p);
+                case "/api/auth/login":    return login(p, address);
                 case "/api/auth/logout":   return logout(current, token);
                 default: break;
             }
@@ -60,11 +63,15 @@ public class AuthRoutes {
                 case "/api/users":         return plain(listUsers());
                 case "/api/users/add":     return plain(addUser(p, current));
                 case "/api/users/role":    return plain(setRole(p, current));
+                case "/api/users/password":return plain(resetPassword(p, current));
                 case "/api/users/delete":  return plain(deleteUser(p, current));
                 default:                   return plain(error(404, "Unknown address " + path));
             }
         } catch (IllegalArgumentException ex) {
             return plain(error(400, ex.getMessage()));
+        } catch (IllegalStateException ex) {           // users.txt or MySQL refused the save
+            ex.printStackTrace();
+            return plain(error(503, "Couldn't save the account change. Nothing was changed; please try again."));
         }
     }
 
@@ -82,16 +89,21 @@ public class AuthRoutes {
         return new Result(message("Welcome, " + u.getUsername() + ". Your admin account is ready."), sessions.create(u), false);
     }
 
-    private Result login(Map<String, String> p) {
+    private Result login(Map<String, String> p, String address) {
+        if (throttle.isBlocked(address)) {
+            return plain(error(429, "Too many sign-in attempts from this device. Wait 10 minutes and try again."));
+        }
         String name = p.getOrDefault("username", "").trim();
         User u = users.login(name, p.get("password"));
         if (u == null) {
+            throttle.recordFailure(address);
             User existing = users.get(name);
             if (users.isLocked(existing)) {
                 return plain(error(429, "Too many wrong passwords. Try again in 5 minutes."));
             }
             return plain(error(401, "Wrong username or password."));
         }
+        throttle.recordSuccess(address);
         api.logActivity("Signed in", u.getUsername());
         return new Result(message("Signed in"), sessions.create(u), false);
     }
@@ -111,7 +123,7 @@ public class AuthRoutes {
     }
 
     private ApiRoutes.Response listUsers() {
-        Json j = new Json().obj().put("ok", true).key("users").arr();
+        Json j = new Json().obj().put("ok", true).put("storage", users.storageName()).key("users").arr();
         for (User u : users.list()) userJson(j, u);
         return ok(j.end().end());
     }
@@ -125,9 +137,18 @@ public class AuthRoutes {
     private ApiRoutes.Response setRole(Map<String, String> p, User current) {
         Role role = parseRole(p.get("role"));
         users.setRole(p.get("username"), role, current);
-        sessions.endAllFor(p.get("username").toLowerCase());    // new role applies on their next sign-in
+        sessions.endAllFor(p.get("username").toLowerCase());    // they sign in again and see the right buttons
         api.logActivity("Changed " + p.get("username") + " to " + role.name().toLowerCase(), current.getUsername());
         return message(p.get("username") + " is now " + role.name().toLowerCase() + ".");
+    }
+
+    // Admin sets a temporary password; the person is signed out everywhere.
+    private ApiRoutes.Response resetPassword(Map<String, String> p, User current) {
+        String name = p.getOrDefault("username", "");
+        users.resetPassword(name, p.get("password"), current);
+        sessions.endAllFor(name.toLowerCase());
+        api.logActivity("Reset the password of " + name.toLowerCase(), current.getUsername());
+        return message("New password set for " + name.toLowerCase() + ". Give it to them privately.");
     }
 
     private ApiRoutes.Response deleteUser(Map<String, String> p, User current) {

@@ -65,6 +65,7 @@ public class Json {
                 .put("date", r.getDateServiced().toString())
                 .put("before", r.getConditionBefore().name())
                 .put("after", r.getConditionAfter().name())
+                .put("by", r.getServicedBy())
                 .end();
     }
 

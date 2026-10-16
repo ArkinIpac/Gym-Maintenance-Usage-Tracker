@@ -1,25 +1,19 @@
 package auth;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
 import structures.CustomHashTable;
 import structures.CustomLinkedList;
 
-// All accounts, kept in our own hash table (username -> User) and saved to users.txt.
-// The file holds one line per user: username|ROLE|salt|hash. It never contains a password,
-// and it's listed in .gitignore so accounts stay on the machine that made them.
+// All accounts, kept in our own hash table (username -> User) and saved through a
+// UserRepository (MySQL when it's up, users.txt otherwise). Passwords are never stored,
+// only a salt and a PBKDF2 hash. Every change is saved straight away; if saving fails
+// the change is undone, so memory and storage never disagree.
 public class UserStore {
 
     private static final int MAX_FAILED = 5;
     private static final long LOCK_MILLIS = 5 * 60 * 1000;
     private static final String USERNAME_RULE = "[A-Za-z0-9._-]{3,32}";
 
-    private final Path file;
+    private final UserRepository repository;
     private final CustomHashTable<String, User> users = new CustomHashTable<>();
     private final CustomLinkedList<String> order = new CustomLinkedList<>();   // for listing
 
@@ -27,12 +21,17 @@ public class UserStore {
     private final String dummySalt = PasswordHasher.newSalt();
     private final String dummyHash = PasswordHasher.hash("not-a-real-password", dummySalt);
 
-    public UserStore(String fileName) {
-        this.file = Paths.get(fileName);
-        load();
+    public UserStore(UserRepository repository) {
+        this.repository = repository;
+        for (User u : repository.loadAll()) {
+            users.put(u.getUsername(), u);
+            order.add(u.getUsername());
+        }
     }
 
     public boolean isEmpty() { return order.isEmpty(); }
+    public int size() { return order.size(); }
+    public String storageName() { return repository.describe(); }
 
     public User get(String username) {
         return username == null ? null : users.get(username.toLowerCase());
@@ -54,14 +53,20 @@ public class UserStore {
         if (username == null || !username.matches(USERNAME_RULE)) {
             throw new IllegalArgumentException("Username must be 3-32 letters, numbers, dots, dashes or underscores.");
         }
-        checkPassword(password);
         String key = username.toLowerCase();
+        checkPassword(password, key);
         if (users.contains(key)) throw new IllegalArgumentException("That username is already taken.");
         String salt = PasswordHasher.newSalt();
         User u = new User(key, role, salt, PasswordHasher.hash(password, salt));
         users.put(key, u);
         order.add(key);
-        save();
+        try {
+            save();
+        } catch (RuntimeException e) {
+            users.remove(key);
+            order.remove(key);
+            throw e;
+        }
         return u;
     }
 
@@ -93,10 +98,30 @@ public class UserStore {
         if (current == null || !PasswordHasher.matches(current, u.getSalt(), u.getPasswordHash())) {
             throw new IllegalArgumentException("Your current password is wrong.");
         }
-        checkPassword(next);
+        if (next != null && next.equals(current)) throw new IllegalArgumentException("The new password must be different from the current one.");
+        setPassword(u, next);
+    }
+
+    // For an admin helping someone who forgot their password. Also unlocks the account.
+    public void resetPassword(String username, String next, User actingUser) {
+        User u = requireUser(username);
+        if (u == actingUser) throw new IllegalArgumentException("Use \"Your account\" to change your own password.");
+        setPassword(u, next);
+        u.failedAttempts = 0;
+        u.lockedUntil = 0;
+    }
+
+    private void setPassword(User u, String next) {
+        checkPassword(next, u.getUsername());
+        String oldSalt = u.getSalt(), oldHash = u.getPasswordHash();
         String salt = PasswordHasher.newSalt();
         u.setPassword(salt, PasswordHasher.hash(next, salt));
-        save();
+        try {
+            save();
+        } catch (RuntimeException e) {
+            u.setPassword(oldSalt, oldHash);
+            throw e;
+        }
     }
 
     public void setRole(String username, Role role, User actingUser) {
@@ -105,8 +130,14 @@ public class UserStore {
         if (u.getRole() == Role.ADMIN && role != Role.ADMIN && adminCount() == 1) {
             throw new IllegalArgumentException("There must always be at least one admin.");
         }
+        Role old = u.getRole();
         u.setRole(role);
-        save();
+        try {
+            save();
+        } catch (RuntimeException e) {
+            u.setRole(old);
+            throw e;
+        }
     }
 
     public void delete(String username, User actingUser) {
@@ -115,9 +146,18 @@ public class UserStore {
         if (u.getRole() == Role.ADMIN && adminCount() == 1) {
             throw new IllegalArgumentException("There must always be at least one admin.");
         }
+        CustomLinkedList<String> oldOrder = new CustomLinkedList<>();
+        for (String name : order) oldOrder.add(name);
         users.remove(u.getUsername());
         order.remove(u.getUsername());
-        save();
+        try {
+            save();
+        } catch (RuntimeException e) {
+            users.put(u.getUsername(), u);
+            while (!order.isEmpty()) order.removeLast();
+            for (String name : oldOrder) order.add(name);
+            throw e;
+        }
     }
 
     private User requireUser(String username) {
@@ -132,42 +172,15 @@ public class UserStore {
         return n;
     }
 
-    private static void checkPassword(String password) {
+    private static void checkPassword(String password, String username) {
         if (password == null || password.length() < 8) throw new IllegalArgumentException("Password must be at least 8 characters.");
         if (password.length() > 128) throw new IllegalArgumentException("Password is too long.");
-    }
-
-    private void load() {
-        if (!Files.exists(file)) return;
-        try {
-            List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-            for (String line : lines) {
-                String[] p = line.trim().split("\\|");
-                if (p.length != 4) continue;
-                User u = new User(p[0], Role.valueOf(p[1]), p[2], p[3]);
-                users.put(u.getUsername(), u);
-                order.add(u.getUsername());
-            }
-        } catch (IOException | IllegalArgumentException e) {
-            throw new IllegalStateException("Could not read " + file + ": " + e.getMessage(), e);
+        if (password.toLowerCase().contains(username.toLowerCase())) {
+            throw new IllegalArgumentException("Password can't contain the username.");
         }
     }
 
-    // Written to a temp file first, then moved over the real one, so a crash mid-write
-    // can't leave a half-written users file.
     private void save() {
-        StringBuilder sb = new StringBuilder();
-        for (String name : order) {
-            User u = users.get(name);
-            sb.append(u.getUsername()).append('|').append(u.getRole().name()).append('|')
-              .append(u.getSalt()).append('|').append(u.getPasswordHash()).append('\n');
-        }
-        try {
-            Path tmp = Paths.get(file.toString() + ".tmp");
-            Files.write(tmp, sb.toString().getBytes(StandardCharsets.UTF_8));
-            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new IllegalStateException("Could not save users: " + e.getMessage(), e);
-        }
+        repository.saveAll(list());
     }
 }

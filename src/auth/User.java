@@ -21,8 +21,8 @@ public class User {
 
     public String getUsername() { return username; }
     public Role getRole() { return role; }
-    String getSalt() { return salt; }
-    String getPasswordHash() { return passwordHash; }
+    public String getSalt() { return salt; }
+    public String getPasswordHash() { return passwordHash; }
 
     void setRole(Role role) { this.role = role; }
 

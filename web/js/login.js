@@ -43,6 +43,13 @@ el("pwToggle").addEventListener("click", () => {
   el("pwToggle").setAttribute("aria-label", show ? "Hide password" : "Show password");
 });
 
+// Warn about Caps Lock, the usual reason a correct password "doesn't work".
+for (const id of ["password", "confirm"]) {
+  el(id).addEventListener("keyup", (e) => {
+    if (e.getModifierState) el("capsHint").hidden = !e.getModifierState("CapsLock");
+  });
+}
+
 el("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const username = el("username").value.trim();

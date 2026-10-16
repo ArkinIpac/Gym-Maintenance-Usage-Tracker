@@ -129,7 +129,7 @@ App.pages.maintenance = (() => {
     $("#mRecent").innerHTML = s.recent.length ? s.recent.map((r, i) => `
       <div class="item item-enter" style="animation-delay:${i * 40}ms">
         <div class="mono" style="font-size:13px;color:var(--lime)">${esc(r.id)}</div>
-        <div class="sub-mono">${esc(r.date)} · ${esc(r.note)}</div>
+        <div class="sub-mono">${esc(r.date)} · ${esc(r.note)}${r.by ? ` · ${esc(r.by)}` : ""}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:8px">${condPill(r.before)}<span class="muted">→</span>${condPill(r.after)}</div>
       </div>`).join("")
       : `<div class="dropzone" style="flex:1">${ICON.check}Serviced machines land here. Usage resets to 0.</div>`;

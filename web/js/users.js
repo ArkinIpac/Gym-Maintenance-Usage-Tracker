@@ -1,4 +1,4 @@
-// Users page (admins only): add accounts, change roles, remove people.
+// Users page (admins only): add accounts, change roles, reset passwords, remove people.
 // The server checks the role on every call; hiding this page is only for convenience.
 
 App.pages.users = (() => {
@@ -15,6 +15,7 @@ App.pages.users = (() => {
         <section class="folder s8" style="--tab: 170px">
           <div class="folder-tab glass">Accounts <span class="num" id="usCount">0</span></div>
           <div class="folder-body glass">
+            <p class="hint" id="usStorage" style="margin:0 0 12px"></p>
             <div class="table-wrap"><table class="tight">
               <thead><tr><th>User</th><th>Role</th><th class="num">Actions</th></tr></thead>
               <tbody id="usBody"><tr><td colspan="3"><div class="skel" style="height:44px"></div></td></tr></tbody>
@@ -66,6 +67,8 @@ App.pages.users = (() => {
     });
 
     $("#usBody").addEventListener("click", async (e) => {
+      const reset = e.target.closest("[data-reset]");
+      if (reset) { resetDialog(reset.dataset.reset); return; }
       const b = e.target.closest("[data-delete]");
       if (!b) return;
       const name = b.dataset.delete;
@@ -77,10 +80,41 @@ App.pages.users = (() => {
     });
   }
 
+  // 14 random characters from a set without look-alikes (no 0/O, 1/l/I).
+  function tempPassword() {
+    const chars = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const bytes = crypto.getRandomValues(new Uint32Array(14));
+    return Array.from(bytes, (n) => chars[n % chars.length]).join("");
+  }
+
+  function resetDialog(name) {
+    openDialog("Reset password", `
+      <p class="muted" style="margin:0 0 14px">Set a new password for <b style="color:var(--text)">${esc(name)}</b>.
+        They'll be signed out everywhere. Give it to them privately and ask them to change it.</p>
+      <form class="form" id="rsForm" novalidate>
+        <span class="pw-wrap"><input class="input mono" name="password" id="rsPassword" autocomplete="new-password" maxlength="128" aria-label="New password" required></span>
+        <button class="btn ghost sm" type="button" id="rsGen" style="align-self:flex-start">Generate a strong one</button>
+        <p class="error-text" id="rsError" role="alert"></p>
+      </form>`,
+      `<button class="btn ghost" data-r="0">Cancel</button><button class="btn lime" id="rsSave">Set password</button>`);
+    $("#rsPassword").value = tempPassword();
+    $("#rsGen").addEventListener("click", () => { $("#rsPassword").value = tempPassword(); });
+    const save = async () => {
+      const r = await action("/api/users/password", { username: name, password: $("#rsPassword").value }, $("#rsSave"));
+      if (r.ok) closeDialog(); else $("#rsError").textContent = r.message;
+    };
+    $("#rsSave").addEventListener("click", save);
+    $("#rsForm").addEventListener("submit", (e) => { e.preventDefault(); save(); });
+    $("#dialog").onclick = (e) => { if (e.target.id === "dialog" || e.target.closest("[data-r]")) closeDialog(); };
+  }
+
   async function load() {
     const r = await api("/api/users");
     if (!r.ok) { $("#usBody").innerHTML = `<tr><td colspan="3" class="empty">${esc(r.message)}</td></tr>`; return; }
     $("#usCount").textContent = r.users.length;
+    $("#usStorage").textContent = r.storage === "MySQL"
+      ? "Saved in MySQL (app_users table): only a salt and a PBKDF2 hash per person."
+      : "Saved in users.txt on this computer (MySQL is offline): only a salt and a PBKDF2 hash per person.";
     $("#usBody").innerHTML = r.users.map((u) => {
       const me = u.username === App.user.username;
       return `<tr>
@@ -89,7 +123,7 @@ App.pages.users = (() => {
         <td>${me ? `<span class="role-pill role-${u.role}">${pretty(u.role)}</span>`
           : `<select class="select sm-select" data-user="${esc(u.username)}" aria-label="Role for ${esc(u.username)}">${options(ROLES, u.role)}</select>`}</td>
         <td class="num">${me ? `<span class="hint">—</span>`
-          : `<button class="btn danger sm" data-delete="${esc(u.username)}" aria-label="Delete ${esc(u.username)}">${ICON.trash}</button>`}</td>
+          : `<span class="row-actions"><button class="btn ghost sm" data-reset="${esc(u.username)}" aria-label="Reset password for ${esc(u.username)}" title="Reset password">${ICON.key}</button><button class="btn danger sm" data-delete="${esc(u.username)}" aria-label="Delete ${esc(u.username)}" title="Delete">${ICON.trash}</button></span>`}</td>
       </tr>`;
     }).join("");
   }

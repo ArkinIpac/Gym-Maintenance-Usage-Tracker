@@ -1,13 +1,18 @@
 package web;
 
+import auth.FileUserRepository;
 import auth.Role;
 import auth.SessionManager;
 import auth.User;
+import auth.UserRepository;
 import auth.UserStore;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import db.DatabaseConnector;
 import db.DatasetImporter;
 import db.EquipmentDAO;
+import db.MaintenanceDAO;
+import db.UserDAO;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import model.Equipment;
+import model.MaintenanceRecord;
 import service.EquipmentStore;
 import service.MaintenanceManager;
 
@@ -28,15 +34,19 @@ import service.MaintenanceManager;
 // Every request passes the sign-in gate in handle(). Uses the JDK's built-in HTTP server.
 public class WebServer {
 
+    private static final String CSV_PATH = "data/equipment_dataset.csv";
+    private static final int MAX_BODY_BYTES = 16 * 1024;     // every form we accept is tiny
+
     // One store and one manager shared by every request.
     private final EquipmentStore store = new EquipmentStore();
     private final MaintenanceManager manager = new MaintenanceManager(store);
-    private EquipmentDAO dao = new EquipmentDAO();   // null when offline (CSV), changes aren't saved
+    private EquipmentDAO dao = new EquipmentDAO();            // both null when offline (CSV):
+    private MaintenanceDAO logDao = new MaintenanceDAO();     // changes aren't saved then
     private String loadMessage = "";
 
     private final ApiRoutes api;
     private final AuthRoutes auth;
-    private final UserStore users = new UserStore("users.txt");
+    private final UserStore users;
     private final SessionManager sessions = new SessionManager();
     private final Path webRoot = Paths.get("web").toAbsolutePath().normalize();
 
@@ -45,20 +55,32 @@ public class WebServer {
 
     public WebServer() {
         loadData();
-        api = new ApiRoutes(store, manager, () -> dao, loadMessage);
+        users = new UserStore(userRepository());
+        api = new ApiRoutes(store, manager, dao, logDao, loadMessage);
         auth = new AuthRoutes(users, sessions, api);
+        System.out.println("Accounts: " + users.size() + " saved in " + users.storageName());
     }
 
-    // MySQL first, the CSV if MySQL can't be reached.
+    // MySQL first, the CSV if MySQL can't be reached. A brand-new, empty database
+    // (e.g. a fresh Azure MySQL server) is filled from the CSV once.
     private void loadData() {
         List<Equipment> all;
         try {
+            DatabaseConnector.ensureTables();
             all = dao.findAll();
-            loadMessage = "Loaded " + all.size() + " records from MySQL.";
+            if (all.isEmpty()) {
+                all = DatasetImporter.readCsv(CSV_PATH);
+                int added = DatasetImporter.insertAll(all);
+                loadMessage = "New database: copied " + added + " records from the CSV into MySQL.";
+            } else {
+                loadMessage = "Loaded " + all.size() + " records from MySQL.";
+            }
         } catch (Exception dbError) {
+            System.out.println("MySQL not used: " + dbError.getMessage());
             dao = null;
+            logDao = null;
             try {
-                all = DatasetImporter.readCsv("data/equipment_dataset.csv");
+                all = DatasetImporter.readCsv(CSV_PATH);
                 loadMessage = "MySQL unavailable, offline mode: loaded " + all.size()
                         + " records from the CSV. Changes will NOT be saved.";
             } catch (Exception csvError) {
@@ -68,7 +90,29 @@ public class WebServer {
             }
         }
         for (Equipment e : all) store.addEquipment(e);   // array + hash table + BST
+
+        if (logDao != null) {
+            try {
+                for (MaintenanceRecord r : logDao.findAll()) manager.addRecord(r);
+            } catch (Exception e) {
+                System.out.println("Couldn't read the service history: " + e.getMessage());
+            }
+        }
         System.out.println(loadMessage);
+    }
+
+    // Accounts live in MySQL when it's up. The first time MySQL is used, accounts made
+    // offline in users.txt are copied over so nobody has to sign up again.
+    private UserRepository userRepository() {
+        String dir = System.getenv("LIMEGYM_DATA_DIR");
+        FileUserRepository file = new FileUserRepository(Paths.get(dir == null || dir.isEmpty() ? "." : dir, "users.txt"));
+        if (dao == null) return file;
+        UserDAO db = new UserDAO();
+        if (db.loadAll().isEmpty() && file.exists()) {
+            db.saveAll(file.loadAll());
+            System.out.println("Copied the accounts from users.txt into MySQL.");
+        }
+        return db;
     }
 
     // Requests run one at a time on purpose: our structures aren't thread-safe.
@@ -100,11 +144,17 @@ public class WebServer {
                 return;
             }
 
-            Map<String, String> params = parseQuery(ex.getRequestURI().getRawQuery());
-            if (post) params.putAll(parseQuery(readBody(ex)));   // form fields sent by fetch()
+            Map<String, String> params;
+            try {
+                params = parseQuery(ex.getRequestURI().getRawQuery());
+                if (post) params.putAll(parseQuery(readBody(ex)));   // form fields sent by fetch()
+            } catch (IllegalArgumentException badInput) {           // too big, or broken %-encoding
+                sendJson(ex, 400, error(badInput.getMessage()));
+                return;
+            }
 
             if (path.startsWith("/api/auth/") || path.startsWith("/api/users")) {
-                AuthRoutes.Result r = auth.handle(method, path, params, user, token);
+                AuthRoutes.Result r = auth.handle(method, path, params, user, token, clientAddress(ex));
                 if (r.setCookieToken != null) {
                     sessions.end(token);                         // a fresh session on every sign-in
                     setCookie(ex, r.setCookieToken, 8 * 60 * 60);
@@ -164,8 +214,11 @@ public class WebServer {
     }
 
     // Stops other sites from framing the app, blocks MIME sniffing, and limits where
-    // scripts, styles and fonts may load from.
+    // scripts, styles and fonts may load from. Behind HTTPS, HSTS tells the browser
+    // to never use plain HTTP for this site again.
     private static void securityHeaders(HttpExchange ex) {
+        if (isHttps(ex)) ex.getResponseHeaders().set("Strict-Transport-Security", "max-age=31536000");
+        ex.getResponseHeaders().set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         ex.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
         ex.getResponseHeaders().set("X-Frame-Options", "DENY");
         ex.getResponseHeaders().set("Referrer-Policy", "same-origin");
@@ -178,10 +231,29 @@ public class WebServer {
     // HttpOnly: page scripts can't read the token. SameSite=Strict: other sites can't send it.
     // Secure is added when the app runs behind HTTPS (e.g. on Azure).
     private static void setCookie(HttpExchange ex, String value, int maxAgeSeconds) {
-        String proto = ex.getRequestHeaders().getFirst("X-Forwarded-Proto");
-        boolean https = "https".equalsIgnoreCase(proto);
         ex.getResponseHeaders().add("Set-Cookie", SessionManager.COOKIE + "=" + value
-                + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=" + maxAgeSeconds + (https ? "; Secure" : ""));
+                + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=" + maxAgeSeconds + (isHttps(ex) ? "; Secure" : ""));
+    }
+
+    // Azure ends HTTPS at its front door and passes the request on as HTTP with this header.
+    private static boolean isHttps(HttpExchange ex) {
+        return "https".equalsIgnoreCase(ex.getRequestHeaders().getFirst("X-Forwarded-Proto"));
+    }
+
+    // The caller's IP. Behind Azure's proxy the real one is the last entry the proxy added
+    // to X-Forwarded-For (earlier entries can be typed in by anyone). Without a proxy
+    // (on a PC) the header is ignored, since then anyone could fake it.
+    private static final boolean BEHIND_PROXY = System.getenv("WEBSITE_SITE_NAME") != null;   // set by Azure
+
+    private static String clientAddress(HttpExchange ex) {
+        String forwarded = ex.getRequestHeaders().getFirst("X-Forwarded-For");
+        if (BEHIND_PROXY && forwarded != null && !forwarded.trim().isEmpty()) {
+            String[] parts = forwarded.split(",");
+            String last = parts[parts.length - 1].trim();
+            int colon = last.indexOf(':');
+            return colon > 0 && colon == last.lastIndexOf(':') ? last.substring(0, colon) : last;   // drop ":port" from IPv4
+        }
+        return ex.getRemoteAddress().getAddress().getHostAddress();
     }
 
     private static String readCookie(HttpExchange ex, String name) {
@@ -217,9 +289,12 @@ public class WebServer {
         }
     }
 
+    // Reads at most MAX_BODY_BYTES, so nobody can fill the server's memory with one request.
     private static String readBody(HttpExchange ex) throws IOException {
         try (InputStream in = ex.getRequestBody()) {
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            byte[] body = in.readNBytes(MAX_BODY_BYTES + 1);
+            if (body.length > MAX_BODY_BYTES) throw new IllegalArgumentException("Request is too large.");
+            return new String(body, StandardCharsets.UTF_8);
         }
     }
 
@@ -231,7 +306,11 @@ public class WebServer {
             int eq = pair.indexOf('=');
             String k = eq < 0 ? pair : pair.substring(0, eq);
             String v = eq < 0 ? "" : pair.substring(eq + 1);
-            map.put(URLDecoder.decode(k, StandardCharsets.UTF_8), URLDecoder.decode(v, StandardCharsets.UTF_8));
+            try {
+                map.put(URLDecoder.decode(k, StandardCharsets.UTF_8), URLDecoder.decode(v, StandardCharsets.UTF_8));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Malformed request.");
+            }
         }
         return map;
     }

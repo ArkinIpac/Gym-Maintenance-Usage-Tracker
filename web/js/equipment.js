@@ -124,9 +124,9 @@ App.pages.equipment = (() => {
         </div>
         <form class="form" novalidate>
           <label class="field"><span class="label">Equipment ID</span>
-            <input class="input mono" name="id" value="${esc(e.id)}" placeholder="EQ-05001" ${editing ? "readonly" : "required"} autocomplete="off"></label>
+            <input class="input mono" name="id" value="${esc(e.id)}" placeholder="EQ-05001" maxlength="10" ${editing ? "readonly" : "required"} autocomplete="off" spellcheck="false"></label>
           <label class="field"><span class="label">Name</span>
-            <input class="input" name="name" value="${esc(e.name)}" placeholder="Treadmill 5001" required autocomplete="off"></label>
+            <input class="input" name="name" value="${esc(e.name)}" placeholder="Treadmill 5001" maxlength="100" required autocomplete="off"></label>
           <div class="row2">
             <label class="field"><span class="label">Category</span>
               <select class="select" name="category">${options(App.meta.categories.map((c) => [c, pretty(c)]), e.category)}</select></label>
@@ -136,7 +136,7 @@ App.pages.equipment = (() => {
           <label class="field"><span class="label">Zone</span>
             <select class="select" name="location">${options(zones, e.location)}</select></label>
           <label class="field"><span class="label">Usage count</span>
-            <input class="input mono" name="usage" type="number" min="0" inputmode="numeric" value="${e.usage}" required></label>
+            <input class="input mono" name="usage" type="number" min="0" max="1000000" inputmode="numeric" value="${e.usage}" required></label>
           <p class="error-text" id="eqError" role="alert"></p>
           <div style="display:flex;gap:10px">
             <button class="btn lime" type="submit" style="flex:1">${editing ? "Save changes" : `${ICON.plus} Register`}</button>
@@ -174,7 +174,7 @@ App.pages.equipment = (() => {
       <div class="empty-state" style="min-height:300px">
         ${ICON.box}
         <b style="color:var(--text);font-size:16px">Pick a machine</b>
-        Select a row to flag, edit or delete it, or register a new one.
+        ${can("STAFF") ? "Select a row to flag, edit or delete it, or register a new one." : "Select a row to see its details and service history."}
         <button class="btn lime" data-act="new" data-need="staff" style="margin-top:8px">${ICON.plus} Register equipment</button>
       </div>`;
   }
@@ -185,9 +185,10 @@ App.pages.equipment = (() => {
     if (!box) return;
     box.innerHTML = r.ok && r.records.length ? r.records.map((x) => `
       <div class="item" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <span class="mono muted" style="font-size:12px">${x.date}</span>${condPill(x.before)}<span class="muted">→</span>${condPill(x.after)}
+        <span class="mono muted" style="font-size:12px">${esc(x.date)}</span>${condPill(x.before)}<span class="muted">→</span>${condPill(x.after)}
+        ${x.by ? `<span class="muted" style="font-size:12px;margin-left:auto">by ${esc(x.by)}</span>` : ""}
       </div>`).join("")
-      : `<div class="hint">No services yet this session. Each service is added to this machine's linked list.</div>`;
+      : `<div class="hint">No services yet. Each service is added to this machine's linked list${App.status && App.status.online ? " and saved in MySQL" : ""}.</div>`;
   }
 
   async function onPanelClick(ev) {

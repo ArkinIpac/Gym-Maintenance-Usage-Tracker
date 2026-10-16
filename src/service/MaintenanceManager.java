@@ -62,7 +62,7 @@ public class MaintenanceManager {
     }
 
     // O(log n). The machine goes back to Good and its usage resets to 0 ("uses since last service").
-    public MaintenanceRecord serviceNext(String note) {
+    public MaintenanceRecord serviceNext(String note, String servicedBy) {
         Equipment e = priorityHeap.extractMax();
         Equipment.Condition before = e.getCondition();
 
@@ -70,20 +70,35 @@ public class MaintenanceManager {
         store.updateCondition(e, Equipment.Condition.GOOD);
         store.updateUsage(e, 0);
 
-        MaintenanceRecord record = new MaintenanceRecord(e.getEquipmentId(), note, before, e.getCondition());
+        MaintenanceRecord record = new MaintenanceRecord(e.getEquipmentId(), note, before, e.getCondition(), servicedBy);
+        addRecord(record);
+        inWorkflow.remove(e.getEquipmentId());             // can be flagged again later
+        return record;
+    }
 
-        CustomLinkedList<MaintenanceRecord> log = historyLogs.get(e.getEquipmentId());
+    // Files a record in the machine's history and the recent list. Also used at start-up
+    // to load saved records from MySQL, oldest first.
+    public void addRecord(MaintenanceRecord record) {
+        CustomLinkedList<MaintenanceRecord> log = historyLogs.get(record.getEquipmentId());
         if (log == null) {
             log = new CustomLinkedList<>();
-            historyLogs.put(e.getEquipmentId(), log);
+            historyLogs.put(record.getEquipmentId(), log);
         }
         log.add(record);
 
         recentlyServiced.addFirst(record);
         if (recentlyServiced.size() > RECENT_LIMIT) recentlyServiced.removeLast();
+    }
 
-        inWorkflow.remove(e.getEquipmentId());             // can be flagged again later
-        return record;
+    // Puts a machine back exactly as it was, after MySQL refused to save its service.
+    public void undoService(Equipment e, MaintenanceRecord record, int oldUsage) {
+        store.updateCondition(e, record.getConditionBefore());
+        store.updateUsage(e, oldUsage);
+        CustomLinkedList<MaintenanceRecord> log = historyLogs.get(e.getEquipmentId());
+        if (log != null) log.remove(record);
+        recentlyServiced.remove(record);
+        priorityHeap.insert(e);
+        inWorkflow.put(e.getEquipmentId(), true);
     }
 
     // Used when a waiting machine is deleted. A queue can only remove from the front,

@@ -1,5 +1,6 @@
 # Copy this file to db.properties (same folder) and put in YOUR MySQL password.
 # db.properties is in .gitignore, so your password is never uploaded to GitHub.
-db.url=jdbc:mysql://localhost:3306/gym_equipment_tracker?rewriteBatchedStatements=true
+# On Azure, set DB_URL, DB_USERNAME and DB_PASSWORD as App Settings instead of using this file.
+db.url=jdbc:mysql://localhost:3306/gym_equipment_tracker?rewriteBatchedStatements=true&connectTimeout=3000
 db.username=root
 db.password=YOUR_MYSQL_PASSWORD

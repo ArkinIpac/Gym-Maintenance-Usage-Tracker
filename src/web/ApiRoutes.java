@@ -3,10 +3,10 @@ package web;
 import auth.Role;
 import benchmark.Benchmark;
 import db.EquipmentDAO;
+import db.MaintenanceDAO;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
-import java.util.function.Supplier;
 import model.Equipment;
 import model.MaintenanceRecord;
 import service.EquipmentStore;
@@ -38,20 +38,24 @@ public class ApiRoutes {
 
     private final EquipmentStore store;
     private final MaintenanceManager manager;
-    private final Supplier<EquipmentDAO> dao;      // get() returns null while offline
+    private final EquipmentDAO dao;                // both null while offline (CSV mode)
+    private final MaintenanceDAO logDao;
     private final String loadMessage;
     private final CustomGraph floor = GymFloorPlan.build();
     private int servicedThisSession = 0;
+    private long lastBenchmark = 0;                // benchmarks are heavy: one per 30 s
 
     private static final int ACTIVITY_LIMIT = 20;
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm:ss");
     private final CustomLinkedList<String[]> activity = new CustomLinkedList<>();
     private String actor = "system";               // who made the current request
 
-    public ApiRoutes(EquipmentStore store, MaintenanceManager manager, Supplier<EquipmentDAO> dao, String loadMessage) {
+    public ApiRoutes(EquipmentStore store, MaintenanceManager manager, EquipmentDAO dao,
+                     MaintenanceDAO logDao, String loadMessage) {
         this.store = store;
         this.manager = manager;
         this.dao = dao;
+        this.logDao = logDao;
         this.loadMessage = loadMessage;
         logActivity(loadMessage);
     }
@@ -127,7 +131,7 @@ public class ApiRoutes {
                 .put("queue", manager.getPendingCount())
                 .put("heap", manager.getHeapSize())
                 .put("serviced", servicedThisSession)
-                .put("online", dao.get() != null)
+                .put("online", dao != null)
                 .put("loadMessage", loadMessage)
                 .end());
     }
@@ -172,7 +176,7 @@ public class ApiRoutes {
                 .put("queue", manager.getPendingCount())
                 .put("heap", manager.getHeapSize())
                 .put("serviced", servicedThisSession)
-                .put("online", dao.get() != null);
+                .put("online", dao != null);
 
         j.key("conditions").arr();
         for (Equipment.Condition c : conds) j.obj().put("name", c.name()).put("count", condCount[c.ordinal()]).end();
@@ -236,17 +240,19 @@ public class ApiRoutes {
     }
 
     private Response addEquipment(Map<String, String> p) {
-        Equipment e = new Equipment(p.get("id"), p.get("name"),
-                Equipment.Category.valueOf(p.get("category")), p.get("location"),
-                Equipment.Condition.valueOf(p.get("condition")), parseUsage(p.get("usage")));
+        String id = p.getOrDefault("id", "").trim().toUpperCase();
+        if (!id.matches(ID_RULE)) return error(400, "ID must look like EQ-05001 (letters, numbers and dashes, up to 10).");
+        Equipment e = new Equipment(id, checkName(p.get("name")),
+                parseEnum(Equipment.Category.class, p.get("category"), "category"), checkZone(p.get("location")),
+                parseEnum(Equipment.Condition.class, p.get("condition"), "condition"), parseUsage(p.get("usage")));
         store.addEquipment(e);                          // throws on duplicate ID
-        EquipmentDAO db = dao.get();
+        EquipmentDAO db = dao;
         if (db != null) {
             try {
                 db.insert(e);
             } catch (Exception ex) {
                 store.deleteEquipment(e.getEquipmentId());   // keep memory and database the same
-                return error(500, "Database rejected " + e.getEquipmentId() + ": " + ex.getMessage());
+                return dbError("save " + e.getEquipmentId(), ex);
             }
         }
         return message("Added " + e.getEquipmentId() + " - " + e.getName() + offlineNote(db));
@@ -264,18 +270,18 @@ public class ApiRoutes {
         Equipment.Condition oldCondition = e.getCondition();
         int oldUsage = e.getUsageCount();
 
-        store.updateDetails(e, p.get("name"), Equipment.Category.valueOf(p.get("category")),
-                p.get("location"), Equipment.Condition.valueOf(p.get("condition")), usage);
+        store.updateDetails(e, checkName(p.get("name")), parseEnum(Equipment.Category.class, p.get("category"), "category"),
+                checkZone(p.get("location")), parseEnum(Equipment.Condition.class, p.get("condition"), "condition"), usage);
         boolean moved = manager.refreshPriority(e);     // re-place it if it's waiting in the heap
 
-        EquipmentDAO db = dao.get();
+        EquipmentDAO db = dao;
         if (db != null) {
             try {
                 db.update(e);
             } catch (Exception ex) {
                 store.updateDetails(e, oldName, oldCategory, oldLocation, oldCondition, oldUsage);
                 manager.refreshPriority(e);
-                return error(500, "Database rejected the changes to " + e.getEquipmentId() + ": " + ex.getMessage());
+                return dbError("save the changes to " + e.getEquipmentId(), ex);
             }
         }
         String extra = (oldUsage != usage ? " (BST re-indexed)" : "") + (moved ? " (heap re-ordered)" : "");
@@ -285,12 +291,12 @@ public class ApiRoutes {
     private Response deleteEquipment(Map<String, String> p) {
         Equipment e = store.findById(p.getOrDefault("id", ""));
         if (e == null) return error(404, "No equipment with ID \"" + p.get("id") + "\".");
-        EquipmentDAO db = dao.get();
+        EquipmentDAO db = dao;
         if (db != null) {
             try {
                 db.delete(e.getEquipmentId());
             } catch (Exception ex) {
-                return error(500, "Database refused to delete " + e.getEquipmentId() + ": " + ex.getMessage());
+                return dbError("delete " + e.getEquipmentId(), ex);
             }
         }
         manager.cancel(e);                               // if it was waiting for maintenance
@@ -379,18 +385,22 @@ public class ApiRoutes {
                     ? "The heap is empty. Promote the queue first."
                     : "Nothing to service. Flag some equipment first.");
         }
-        MaintenanceRecord record = manager.serviceNext("Routine service");
-        servicedThisSession++;
-        Equipment e = store.findById(record.getEquipmentId());
-        EquipmentDAO db = dao.get();
-        String saved = "";
-        if (db != null && e != null) {
-            try { db.update(e); } catch (Exception ex) { saved = " (database update failed: " + ex.getMessage() + ")"; }
-        } else if (db == null) {
-            saved = " (offline, not saved)";
+        Equipment e = manager.peekNext();
+        int oldUsage = e.getUsageCount();
+        MaintenanceRecord record = manager.serviceNext("Routine service", actor);
+        if (dao != null) {
+            try {
+                dao.update(e);
+                logDao.insert(record);
+            } catch (Exception ex) {
+                manager.undoService(e, record, oldUsage);    // back on the heap, unchanged
+                try { dao.update(e); } catch (Exception ignored) { }
+                return dbError("save the service of " + e.getEquipmentId(), ex);
+            }
         }
+        servicedThisSession++;
         return message("Serviced " + record.getEquipmentId() + ": " + pretty(record.getConditionBefore())
-                + " → " + pretty(record.getConditionAfter()) + saved);
+                + " → " + pretty(record.getConditionAfter()) + offlineNote(dao));
     }
 
     private Response clearHeap() {
@@ -575,6 +585,9 @@ public class ApiRoutes {
     // Benchmarks page
 
     private Response benchmark() {
+        long now = System.currentTimeMillis();
+        if (now - lastBenchmark < 30_000) return error(429, "The benchmark just ran. Try again in a few seconds.");
+        lastBenchmark = now;
         Benchmark.Row[] rows = Benchmark.measure(store.getAll());
         Json j = new Json().obj().put("ok", true).put("savedTo", Benchmark.getResultsFile()).key("rows").arr();
         for (Benchmark.Row r : rows) {
@@ -632,14 +645,45 @@ public class ApiRoutes {
 
     private static String offlineNote(EquipmentDAO db) { return db == null ? " (offline, not saved)" : ""; }
 
+    // The real error goes to the server log only; the browser gets a plain message.
+    private static Response dbError(String what, Exception ex) {
+        System.out.println("Database error while trying to " + what + ": " + ex);
+        return error(503, "The database couldn't " + what + ". Nothing was changed; please try again.");
+    }
+
+    private static final String ID_RULE = "[A-Z0-9-]{1,10}";
+
+    private static String checkName(String name) {
+        if (name == null || name.trim().isEmpty()) throw new IllegalArgumentException("Equipment name cannot be empty.");
+        if (name.trim().length() > 100) throw new IllegalArgumentException("Name is too long (100 characters at most).");
+        return name.trim();
+    }
+
+    private String checkZone(String zone) {
+        if (zone == null || !floor.hasZone(zone)) throw new IllegalArgumentException("Pick a zone from the list.");
+        return zone;
+    }
+
+    // Enum names from the form, with a readable message instead of Java's.
+    private static <E extends Enum<E>> E parseEnum(Class<E> type, String value, String label) {
+        try {
+            return Enum.valueOf(type, value == null ? "" : value.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Pick a " + label + " from the list.");
+        }
+    }
+
     private static int intParam(Map<String, String> p, String key, int fallback) {
         try { return Integer.parseInt(p.getOrDefault(key, "").trim().replace(",", "")); }
         catch (NumberFormatException e) { return fallback; }
     }
 
     private static int parseUsage(String s) {
-        try { return Integer.parseInt(s == null ? "" : s.trim()); }
+        int n;
+        try { n = Integer.parseInt(s == null ? "" : s.trim()); }
         catch (NumberFormatException e) { throw new IllegalArgumentException("Usage count must be a whole number, e.g. 250."); }
+        if (n < 0 || n > 1_000_000) throw new IllegalArgumentException("Usage count must be between 0 and 1,000,000.");
+        return n;
     }
 
     // CRITICAL -> Critical

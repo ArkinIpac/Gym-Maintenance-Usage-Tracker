@@ -6,12 +6,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import model.Equipment;
 
-// Run once to load data/equipment_dataset.csv (5,000 rows) into MySQL.
+// Loads data/equipment_dataset.csv (5,000 rows) into MySQL. The web app does this by itself
+// when it finds an empty database, so running this by hand is only needed to top up the rows.
 // readCsv() is also what the app uses when MySQL is down.
 public class DatasetImporter {
 
@@ -19,10 +21,11 @@ public class DatasetImporter {
 
     public static void main(String[] args) {
         try {
+            DatabaseConnector.ensureTables();
             List<Equipment> equipment = readCsv(CSV_PATH);
             System.out.println("Read " + equipment.size() + " rows from " + CSV_PATH);
-            int inserted = insertAll(equipment);
-            System.out.println("Imported " + inserted + " rows into MySQL.");
+            int total = insertAll(equipment);
+            System.out.println("Done. The equipment table now holds " + total + " rows.");
         } catch (IOException e) {
             System.out.println("Could not read the CSV file: " + e.getMessage());
         } catch (SQLException e) {
@@ -61,11 +64,12 @@ public class DatasetImporter {
 
     // Batches of 500 instead of 5,000 separate inserts.
     // INSERT IGNORE skips IDs that already exist, so running it twice is harmless.
-    private static int insertAll(List<Equipment> equipment) throws SQLException {
+    // Returns how many rows the table holds afterwards. (With rewriteBatchedStatements the
+    // driver can't report per-row results, so we simply count.)
+    public static int insertAll(List<Equipment> equipment) throws SQLException {
         String sql = "INSERT IGNORE INTO equipment "
                    + "(equipment_id, name, category, location, condition_status, usage_count) "
                    + "VALUES (?, ?, ?, ?, ?, ?)";
-        int total = 0;
         try (Connection conn = DatabaseConnector.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             conn.setAutoCommit(false); // one transaction: faster, and all-or-nothing
@@ -78,18 +82,14 @@ public class DatasetImporter {
                 stmt.setString(5, e.getCondition().name());
                 stmt.setInt(6, e.getUsageCount());
                 stmt.addBatch();
-                if (++count % 500 == 0) total += sum(stmt.executeBatch());
+                if (++count % 500 == 0) stmt.executeBatch();
             }
-            total += sum(stmt.executeBatch()); // whatever is left after the last full batch
+            stmt.executeBatch();               // whatever is left after the last full batch
             conn.commit();
+            try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM equipment")) {
+                rs.next();
+                return rs.getInt(1);
+            }
         }
-        return total;
-    }
-
-    // executeBatch() gives 1 per inserted row, 0 for a skipped one, or a negative code; count the positives.
-    private static int sum(int[] results) {
-        int s = 0;
-        for (int r : results) if (r > 0) s += r;
-        return s;
     }
 }
