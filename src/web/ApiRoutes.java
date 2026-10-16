@@ -1,5 +1,6 @@
 package web;
 
+import auth.Role;
 import benchmark.Benchmark;
 import db.EquipmentDAO;
 import java.time.LocalTime;
@@ -45,6 +46,7 @@ public class ApiRoutes {
     private static final int ACTIVITY_LIMIT = 20;
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm:ss");
     private final CustomLinkedList<String[]> activity = new CustomLinkedList<>();
+    private String actor = "system";               // who made the current request
 
     public ApiRoutes(EquipmentStore store, MaintenanceManager manager, Supplier<EquipmentDAO> dao, String loadMessage) {
         this.store = store;
@@ -54,7 +56,26 @@ public class ApiRoutes {
         logActivity(loadMessage);
     }
 
-    public Response handle(String method, String path, Map<String, String> p) {
+    // The lowest role allowed to call an address. Reading is open to every signed-in user;
+    // anything not listed here is admin-only, so a new endpoint is locked down by default.
+    public static Role requiredRole(String method, String path) {
+        if (!"POST".equalsIgnoreCase(method)) return Role.VIEWER;
+        switch (path) {
+            case "/api/maintenance/flag":
+            case "/api/maintenance/flag-critical":
+            case "/api/maintenance/promote":
+            case "/api/maintenance/service":
+            case "/api/equipment/add":
+            case "/api/equipment/update":
+            case "/api/benchmark":
+                return Role.STAFF;
+            default:
+                return Role.ADMIN;
+        }
+    }
+
+    public Response handle(String method, String path, Map<String, String> p, String username) {
+        actor = username;
         boolean post = "POST".equalsIgnoreCase(method);
         try {
             switch (path) {
@@ -585,8 +606,13 @@ public class ApiRoutes {
     }
 
     // Newest first, last 20 kept: addFirst() the new one, removeLast() the oldest.
-    private void logActivity(String msg) {
-        activity.addFirst(new String[]{LocalTime.now().format(CLOCK), msg});
+    public void logActivity(String msg, String user) {
+        actor = user;
+        logActivity(msg);
+    }
+
+    public void logActivity(String msg) {
+        activity.addFirst(new String[]{LocalTime.now().format(CLOCK), msg, actor});
         if (activity.size() > ACTIVITY_LIMIT) activity.removeLast();
     }
 
@@ -595,7 +621,7 @@ public class ApiRoutes {
         int n = 0;
         for (String[] a : activity) {
             if (n++ == limit) break;
-            j.obj().put("time", a[0]).put("message", a[1]).end();
+            j.obj().put("time", a[0]).put("message", a[1]).put("user", a[2]).end();
         }
         j.end();
     }

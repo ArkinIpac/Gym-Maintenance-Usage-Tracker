@@ -89,7 +89,7 @@ App.pages.benchmark = (() => {
   return {
     title: "Benchmarks",
     eyebrow: "measured vs Big-O",
-    actions: () => `<button class="btn lime" id="hdRunBench">${ICON.play} Run benchmarks</button>`,
+    actions: () => `<button class="btn lime" id="hdRunBench" data-need="staff">${ICON.play} Run benchmarks</button>`,
     bindActions: () => $("#hdRunBench").addEventListener("click", (e) => run(e.currentTarget)),
     init,
     onShow,

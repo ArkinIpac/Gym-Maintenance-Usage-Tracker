@@ -13,3 +13,7 @@ Claude outputs/
 # OS / editor clutter
 .DS_Store
 Thumbs.db
+
+# Accounts (password hashes) stay on the machine that made them
+users.txt
+users.txt.tmp

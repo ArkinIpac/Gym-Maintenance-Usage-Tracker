@@ -51,6 +51,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>
           Benchmarks
         </a>
+        <a class="nav-item" href="#users" data-page="users" data-need="admin">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>
+          Users
+        </a>
       </nav>
 
       <div class="side-box flat">
@@ -68,6 +72,17 @@
       <div class="db flat" id="dbStatus" role="status">
         <span class="dot live"></span><span id="dbText">Connecting…</span>
       </div>
+
+      <div class="user-chip flat">
+        <span class="avatar" id="userAvatar">?</span>
+        <span class="user-meta"><b id="userName">…</b><span class="role-pill" id="userRole"></span></span>
+        <button class="btn ghost icon-btn sm-icon" id="accountBtn" type="button" aria-label="Account settings" title="Account">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+        <button class="btn ghost icon-btn sm-icon" id="logoutBtn" type="button" aria-label="Sign out" title="Sign out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
     </aside>
 
     <main class="main" id="main" tabindex="-1">
@@ -84,6 +99,7 @@
       <section class="page" id="page-maintenance" aria-label="Maintenance"></section>
       <section class="page" id="page-reports" aria-label="Floor and reports"></section>
       <section class="page" id="page-benchmark" aria-label="Benchmarks"></section>
+      <section class="page" id="page-users" aria-label="Users"></section>
     </main>
   </div>
 
@@ -94,6 +110,8 @@
     <a href="#maintenance" data-page="maintenance" aria-label="Maintenance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg></a>
     <a href="#reports" data-page="reports" aria-label="Floor and reports"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="10" cy="18" r="2.5"/><path d="M8.2 7.2l7.6.6M16.6 10l-5 6M7 8.3l2.2 7.4"/></svg></a>
     <a href="#benchmark" data-page="benchmark" aria-label="Benchmarks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></a>
+    <a href="#users" data-page="users" data-need="admin" aria-label="Users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></svg></a>
+    <button type="button" class="tab-account" id="tabAccount" aria-label="Account"><span class="avatar" id="tabAvatar">?</span></button>
   </nav>
 
   <div class="toasts" id="toasts" aria-live="polite"></div>
@@ -127,5 +145,6 @@
   <script src="js/maintenance.js"></script>
   <script src="js/reports.js"></script>
   <script src="js/benchmark.js"></script>
+  <script src="js/users.js"></script>
 </body>
 </html>

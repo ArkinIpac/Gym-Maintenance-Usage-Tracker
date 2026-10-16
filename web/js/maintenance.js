@@ -20,7 +20,7 @@ App.pages.maintenance = (() => {
           <div class="folder-body flat" style="--tab:200px;display:flex;flex-direction:column;gap:10px;min-height:580px;height:100%">
             <div class="hint">In the order reported. #1 is the front of the line.</div>
             <div class="stack" id="mQueueList"></div>
-            <button class="btn lime" id="mPromote" style="margin-top:auto">Promote to heap ${ICON.arrow}</button>
+            <button class="btn lime" id="mPromote" data-need="staff" style="margin-top:auto">Promote to heap ${ICON.arrow}</button>
           </div>
         </section>
 
@@ -29,8 +29,8 @@ App.pages.maintenance = (() => {
           <div class="folder-body flat" style="--tab:214px;display:flex;flex-direction:column;gap:10px;min-height:580px;height:100%">
             <div class="stack" id="mHeapList"></div>
             <div style="margin-top:auto;display:flex;gap:10px">
-              <button class="btn lime" id="mService" style="flex:1">${ICON.wrench} <span id="mServiceLabel">Service next</span></button>
-              <button class="btn ghost" id="mClearHeap" aria-label="Clear the heap without servicing">Clear</button>
+              <button class="btn lime" id="mService" data-need="staff" style="flex:1">${ICON.wrench} <span id="mServiceLabel">Service next</span></button>
+              <button class="btn ghost" id="mClearHeap" data-need="admin" aria-label="Clear the heap without servicing">Clear</button>
             </div>
           </div>
         </section>
@@ -40,7 +40,7 @@ App.pages.maintenance = (() => {
           <div class="folder-body flat" style="--tab:170px;display:flex;flex-direction:column;gap:10px;min-height:580px;height:100%">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span class="hint">Last 10, newest first</span>
-              <button class="btn ghost sm" id="mClearRecent">Clear</button>
+              <button class="btn ghost sm" id="mClearRecent" data-need="admin">Clear</button>
             </div>
             <div class="stack" id="mRecent" style="flex:1"></div>
           </div>
@@ -151,12 +151,12 @@ App.pages.maintenance = (() => {
     title: "Maintenance",
     eyebrow: "queue → heap → service",
     actions: () => `
-      <label class="inline-input flat">
+      <label class="inline-input flat" data-need="staff">
         <span class="label">ID</span>
         <input id="hdFlagId" class="mono" placeholder="EQ-00042" style="width:130px" autocomplete="off" aria-label="Equipment ID to flag">
         <button class="btn lime sm" id="hdFlag">Flag</button>
       </label>
-      <button class="btn ghost" id="hdFlagAll">${ICON.flag} Flag all critical</button>`,
+      <button class="btn ghost" id="hdFlagAll" data-need="staff">${ICON.flag} Flag all critical</button>`,
     bindActions: () => {
       $("#hdFlag").addEventListener("click", (e) => flagFromHeader(e.currentTarget));
       $("#hdFlagId").addEventListener("keydown", (e) => { if (e.key === "Enter") flagFromHeader($("#hdFlag")); });

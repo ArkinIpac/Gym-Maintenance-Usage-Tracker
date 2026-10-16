@@ -5,20 +5,30 @@ const App = {
   pages: {},       // App.pages.overview = { title, eyebrow, actions, init, onShow }
   meta: null,      // categories, conditions, zones from /api/meta
   status: null,    // latest /api/status
+  user: null,      // { username, role } of whoever is signed in
   current: null,
 };
+
+const RANK = { VIEWER: 0, STAFF: 1, ADMIN: 2 };
+const can = (role) => !!App.user && RANK[App.user.role] >= RANK[role];
 
 // Server calls
 // GET:  await api("/api/status")
 // POST: await api("/api/maintenance/flag", { id: "EQ-00042" })  (sent as form fields)
+// The X-Requested-With header is how the server knows the call came from this app (CSRF check).
 async function api(path, postData) {
-  const options = postData === undefined ? {} : {
+  const headers = { "X-Requested-With": "LimeGym" };
+  const options = postData === undefined ? { headers } : {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: { ...headers, "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(postData).toString(),
   };
   try {
     const res = await fetch(path, options);
+    if (res.status === 401 && !path.startsWith("/api/auth/")) {   // session expired or signed out elsewhere
+      location.replace("/login.html");
+      return { ok: false, message: "Please sign in." };
+    }
     return await res.json();
   } catch (e) {
     return { ok: false, message: "Can't reach the server. Is web.WebServer running?" };
@@ -160,9 +170,57 @@ async function refreshStatus() {
   return s;
 }
 
+// Signed-in user: sidebar chip, role class on <body> (CSS hides buttons the role can't use).
+function applyUser(user) {
+  App.user = user;
+  document.body.classList.remove("role-VIEWER", "role-STAFF", "role-ADMIN");
+  document.body.classList.add("role-" + user.role);
+  const initial = user.username.charAt(0).toUpperCase();
+  $("#userAvatar").textContent = initial;
+  $("#tabAvatar").textContent = initial;
+  $("#userName").textContent = user.username;
+  $("#userRole").textContent = pretty(user.role);
+  $("#userRole").className = "role-pill role-" + user.role;
+}
+
+async function signOut() {
+  await api("/api/auth/logout", {});
+  location.replace("/login.html");
+}
+
+function accountDialog() {
+  openDialog("Your account", `
+    <div class="user-cell" style="margin-bottom:18px"><span class="avatar">${esc(App.user.username.charAt(0).toUpperCase())}</span>
+      <span><b>${esc(App.user.username)}</b><br><span class="role-pill role-${App.user.role}">${pretty(App.user.role)}</span></span></div>
+    <form class="form" id="pwForm" novalidate>
+      <div class="label">Change password</div>
+      <input class="input" name="current" type="password" autocomplete="current-password" placeholder="Current password" aria-label="Current password" required>
+      <input class="input" name="next" type="password" autocomplete="new-password" placeholder="New password (8+ characters)" aria-label="New password" required>
+      <input class="input" name="again" type="password" autocomplete="new-password" placeholder="Repeat new password" aria-label="Repeat new password" required>
+      <p class="error-text" id="pwError" role="alert"></p>
+      <button class="btn lime" type="submit">Change password</button>
+    </form>`,
+    `<button class="btn danger" data-act="logout">Sign out</button><button class="btn ghost" data-r="1">Close</button>`);
+  $("#dialog").onclick = (e) => {
+    if (e.target.closest("[data-act=logout]")) { signOut(); return; }
+    if (e.target.id === "dialog" || e.target.closest("[data-r]")) closeDialog();
+  };
+  $("#pwForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(e.currentTarget));
+    if (f.next !== f.again) { $("#pwError").textContent = "The new passwords don't match."; return; }
+    const r = await api("/api/auth/password", { current: f.current, next: f.next });
+    if (!r.ok) { $("#pwError").textContent = r.message; return; }
+    closeDialog();
+    toast(r.message);
+    setTimeout(() => location.replace("/login.html"), 1200);
+  });
+}
+
 // Page switching
 function showPage(key) {
   if (!App.pages[key]) key = "overview";
+  if (App.pages[key].need && !can(App.pages[key].need)) key = "overview";
   const page = App.pages[key];
   App.current = key;
   $("#dialog").hidden = true;
@@ -186,8 +244,6 @@ function today() {
 
 // Start
 document.addEventListener("DOMContentLoaded", async () => {
-  window.addEventListener("hashchange", () => showPage(location.hash.slice(1)));
-
   // Ctrl+K opens search; Esc closes overlays.
   document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
@@ -210,9 +266,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.key === "Enter") pickPalette(paletteIndex);
   });
 
+  const state = await api("/api/auth/state");
+  if (!state.ok || !state.user) { location.replace("/login.html"); return; }
+  applyUser(state.user);
+  $("#logoutBtn").addEventListener("click", signOut);
+  $("#accountBtn").addEventListener("click", accountDialog);
+  $("#tabAccount").addEventListener("click", accountDialog);
+
   App.meta = await api("/api/meta");
   if (!App.meta.ok) { toast(App.meta.message, true); return; }
-  Object.values(App.pages).forEach((p) => p.init && p.init());
+  Object.values(App.pages).forEach((p) => { if (p.init && (!p.need || can(p.need))) p.init(); });
   await refreshStatus();
   showPage(location.hash.slice(1) || "overview");
+  window.addEventListener("hashchange", () => showPage(location.hash.slice(1)));   // only once the pages exist
 });

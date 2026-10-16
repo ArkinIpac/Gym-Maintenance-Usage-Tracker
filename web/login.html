@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Lime Gym</title>
+  <meta name="theme-color" content="#0A0A0A">
+  <link rel="icon" href="img/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
+  <div class="backdrop" aria-hidden="true">
+    <div class="orb one"></div><div class="orb two"></div><div class="orb three"></div>
+    <div class="grid-lines"></div>
+  </div>
+
+  <main class="login-shell">
+    <section class="login-hero rise" aria-label="Lime Gym">
+      <div class="brand">
+        <img class="brand-mark" src="img/logo.svg" alt="" width="42" height="42">
+        <div>
+          <div class="brand-name">Lime Gym</div>
+          <div class="brand-sub">Maintenance OS</div>
+        </div>
+      </div>
+      <h1 class="login-title">Keep every<br>machine <span class="gtext">running.</span></h1>
+      <p class="login-lead">Flag broken equipment, fix the worst first, and see the whole floor at a glance.</p>
+      <ul class="login-points">
+        <li><span class="dot"></span>Passwords stored as salted PBKDF2 hashes</li>
+        <li><span class="dot"></span>Admin, staff and viewer roles</li>
+        <li><span class="dot"></span>Locks after 5 wrong passwords</li>
+      </ul>
+    </section>
+
+    <section class="folder login-card rise" style="--tab: 150px" aria-labelledby="formTitle">
+      <div class="folder-tab glass" id="formTab">Sign in</div>
+      <div class="folder-body glass">
+        <h2 class="card-title login-card-title" id="formTitle">Welcome back</h2>
+        <p class="card-sub" id="formSub">Sign in with your Lime Gym account.</p>
+
+        <form class="form" id="loginForm" novalidate>
+          <label class="field"><span class="label">Username</span>
+            <input class="input" name="username" id="username" autocomplete="username" autocapitalize="off" spellcheck="false" required maxlength="32"></label>
+
+          <label class="field"><span class="label">Password</span>
+            <span class="pw-wrap">
+              <input class="input" name="password" id="password" type="password" autocomplete="current-password" required maxlength="128">
+              <button class="pw-toggle" type="button" id="pwToggle" aria-label="Show password" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </span></label>
+
+          <label class="field" id="confirmField" hidden><span class="label">Confirm password</span>
+            <input class="input" name="confirm" id="confirm" type="password" autocomplete="new-password" maxlength="128"></label>
+
+          <p class="hint" id="pwHint" hidden>At least 8 characters. Usernames: 3–32 letters, numbers, dots, dashes or underscores.</p>
+          <p class="error-text login-error" id="loginError" role="alert"></p>
+
+          <button class="btn lime block" type="submit" id="submitBtn">
+            <span id="submitLabel">Sign in</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+
+        <p class="hint login-foot" id="loginFoot">No account? Ask your gym admin to add you.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/login.js"></script>
+</body>
+</html>

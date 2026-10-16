@@ -1,5 +1,9 @@
 package web;
 
+import auth.Role;
+import auth.SessionManager;
+import auth.User;
+import auth.UserStore;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import db.DatasetImporter;
@@ -21,7 +25,7 @@ import service.EquipmentStore;
 import service.MaintenanceManager;
 
 // Loads the data once, then serves the web/ folder and answers /api/... requests with JSON.
-// Uses the JDK's built-in HTTP server, no frameworks.
+// Every request passes the sign-in gate in handle(). Uses the JDK's built-in HTTP server.
 public class WebServer {
 
     // One store and one manager shared by every request.
@@ -31,11 +35,18 @@ public class WebServer {
     private String loadMessage = "";
 
     private final ApiRoutes api;
+    private final AuthRoutes auth;
+    private final UserStore users = new UserStore("users.txt");
+    private final SessionManager sessions = new SessionManager();
     private final Path webRoot = Paths.get("web").toAbsolutePath().normalize();
+
+    // Pages and files anyone may load before signing in.
+    private static final String[] PUBLIC_FILES = {"/login.html", "/js/login.js", "/css/", "/img/"};
 
     public WebServer() {
         loadData();
         api = new ApiRoutes(store, manager, () -> dao, loadMessage);
+        auth = new AuthRoutes(users, sessions, api);
     }
 
     // MySQL first, the CSV if MySQL can't be reached.
@@ -70,24 +81,68 @@ public class WebServer {
 
     private void handle(HttpExchange ex) throws IOException {
         try {
+            securityHeaders(ex);
             String path = ex.getRequestURI().getPath();
-            if (path.startsWith("/api/")) {
-                Map<String, String> params = parseQuery(ex.getRequestURI().getRawQuery());
-                if ("POST".equalsIgnoreCase(ex.getRequestMethod())) {
-                    params.putAll(parseQuery(readBody(ex)));   // form fields sent by fetch()
-                }
-                ApiRoutes.Response r = api.handle(ex.getRequestMethod(), path, params);
-                send(ex, r.status, "application/json; charset=utf-8", r.body.getBytes(StandardCharsets.UTF_8));
-            } else {
-                serveFile(ex, path);
+            String method = ex.getRequestMethod();
+            String token = readCookie(ex, SessionManager.COOKIE);
+            User user = users.get(sessions.check(token));
+
+            if (!path.startsWith("/api/")) {
+                serveFile(ex, path, user);
+                return;
             }
+
+            // A page on another site can make the browser send our cookie, but it can't add
+            // this header, so every change must come from our own scripts (CSRF protection).
+            boolean post = "POST".equalsIgnoreCase(method);
+            if (post && !"LimeGym".equals(ex.getRequestHeaders().getFirst("X-Requested-With"))) {
+                sendJson(ex, 403, error("Request blocked."));
+                return;
+            }
+
+            Map<String, String> params = parseQuery(ex.getRequestURI().getRawQuery());
+            if (post) params.putAll(parseQuery(readBody(ex)));   // form fields sent by fetch()
+
+            if (path.startsWith("/api/auth/") || path.startsWith("/api/users")) {
+                AuthRoutes.Result r = auth.handle(method, path, params, user, token);
+                if (r.setCookieToken != null) {
+                    sessions.end(token);                         // a fresh session on every sign-in
+                    setCookie(ex, r.setCookieToken, 8 * 60 * 60);
+                }
+                if (r.clearCookie) setCookie(ex, "", 0);
+                sendJson(ex, r.response.status, r.response.body);
+                return;
+            }
+
+            if (user == null) {
+                sendJson(ex, 401, error("Please sign in."));
+                return;
+            }
+            Role needed = ApiRoutes.requiredRole(method, path);
+            if (!user.getRole().atLeast(needed)) {
+                sendJson(ex, 403, error("Your account (" + user.getRole().name().toLowerCase()
+                        + ") can't do this. Ask an admin."));
+                return;
+            }
+            ApiRoutes.Response r = api.handle(method, path, params, user.getUsername());
+            sendJson(ex, r.status, r.body);
         } catch (Exception e) {
-            String msg = new Json().obj().put("ok", false).put("message", "Server error: " + e).end().toString();
-            send(ex, 500, "application/json; charset=utf-8", msg.getBytes(StandardCharsets.UTF_8));
+            e.printStackTrace();                                 // details stay in the server log
+            sendJson(ex, 500, error("Something went wrong on the server."));
         }
     }
 
-    private void serveFile(HttpExchange ex, String path) throws IOException {
+    private void serveFile(HttpExchange ex, String path, User user) throws IOException {
+        boolean isPublic = false;
+        for (String p : PUBLIC_FILES) if (path.startsWith(p)) isPublic = true;
+        if (user == null && !isPublic) {
+            redirect(ex, "/login.html");
+            return;
+        }
+        if (user != null && path.equals("/login.html")) {
+            redirect(ex, "/");
+            return;
+        }
         if (path.equals("/")) path = "/index.html";
         Path file = webRoot.resolve(path.substring(1)).normalize();
         // Never serve files outside web/ (blocks things like /../db.properties).
@@ -106,6 +161,51 @@ public class WebServer {
         if (name.endsWith(".png"))  return "image/png";
         if (name.endsWith(".ico"))  return "image/x-icon";
         return "application/octet-stream";
+    }
+
+    // Stops other sites from framing the app, blocks MIME sniffing, and limits where
+    // scripts, styles and fonts may load from.
+    private static void securityHeaders(HttpExchange ex) {
+        ex.getResponseHeaders().set("X-Content-Type-Options", "nosniff");
+        ex.getResponseHeaders().set("X-Frame-Options", "DENY");
+        ex.getResponseHeaders().set("Referrer-Policy", "same-origin");
+        ex.getResponseHeaders().set("Content-Security-Policy",
+                "default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; "
+                + "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                + "font-src https://fonts.gstatic.com; frame-ancestors 'none'; form-action 'self'");
+    }
+
+    // HttpOnly: page scripts can't read the token. SameSite=Strict: other sites can't send it.
+    // Secure is added when the app runs behind HTTPS (e.g. on Azure).
+    private static void setCookie(HttpExchange ex, String value, int maxAgeSeconds) {
+        String proto = ex.getRequestHeaders().getFirst("X-Forwarded-Proto");
+        boolean https = "https".equalsIgnoreCase(proto);
+        ex.getResponseHeaders().add("Set-Cookie", SessionManager.COOKIE + "=" + value
+                + "; Path=/; HttpOnly; SameSite=Strict; Max-Age=" + maxAgeSeconds + (https ? "; Secure" : ""));
+    }
+
+    private static String readCookie(HttpExchange ex, String name) {
+        String header = ex.getRequestHeaders().getFirst("Cookie");
+        if (header == null) return null;
+        for (String part : header.split(";")) {
+            String[] kv = part.trim().split("=", 2);
+            if (kv.length == 2 && kv[0].equals(name)) return kv[1];
+        }
+        return null;
+    }
+
+    private static void redirect(HttpExchange ex, String location) throws IOException {
+        ex.getResponseHeaders().set("Location", location);
+        ex.sendResponseHeaders(302, -1);
+        ex.close();
+    }
+
+    private static String error(String message) {
+        return new Json().obj().put("ok", false).put("message", message).end().toString();
+    }
+
+    private static void sendJson(HttpExchange ex, int status, String json) throws IOException {
+        send(ex, status, "application/json; charset=utf-8", json.getBytes(StandardCharsets.UTF_8));
     }
 
     private static void send(HttpExchange ex, int status, String type, byte[] body) throws IOException {

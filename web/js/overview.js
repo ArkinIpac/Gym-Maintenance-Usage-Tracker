@@ -19,8 +19,8 @@ App.pages.overview = (() => {
             </div>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
-            <button class="btn lime" id="ovFlagAll">${ICON.flag} Flag all critical</button>
-            <button class="btn ghost" id="ovPromote">Promote queue</button>
+            <button class="btn lime" id="ovFlagAll" data-need="staff">${ICON.flag} Flag all critical</button>
+            <button class="btn ghost" id="ovPromote" data-need="staff">Promote queue</button>
             <div class="hero-stats">
               <div><b id="ovQueue" style="color:var(--amber)">0</b>in queue</div>
               <div><b id="ovServiced" style="color:var(--lime)">0</b>serviced</div>
@@ -108,7 +108,7 @@ App.pages.overview = (() => {
         <div class="gtext" style="font:700 34px var(--f-display)">${fmt(n.priority)}</div>
         <div style="margin-top:8px">${bar(Math.min(100, n.priority / 500))}</div>
       </div>
-      <button class="btn lime" data-service style="margin-top:auto">Service now ${ICON.arrow}</button>`
+      <button class="btn lime" data-service data-need="staff" style="margin-top:auto">Service now ${ICON.arrow}</button>`
       : `<div class="empty-state" style="flex:1">${ICON.check}<b style="color:var(--text)">The heap is empty</b>Flag equipment, then promote the queue to rank it.</div>`;
 
     // Donut: one arc per condition
@@ -170,7 +170,7 @@ App.pages.overview = (() => {
     title: "Overview",
     eyebrow: () => today(),
     actions: () => `<button class="btn ghost" id="hdSearch">${'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>'} Search <span class="kbd">Ctrl K</span></button>
-                    <a class="btn lime" href="#equipment" id="hdNew">${ICON.plus} Register equipment</a>`,
+                    <a class="btn lime" href="#equipment" id="hdNew" data-need="staff">${ICON.plus} Register equipment</a>`,
     bindActions: () => {
       $("#hdSearch").addEventListener("click", openPalette);
       $("#hdNew").addEventListener("click", () => setTimeout(() => App.pages.equipment.newItem(), 0));
@@ -186,6 +186,6 @@ function activityHtml(list) {
   return list.map((a) => {
     const m = a.message;
     const color = /^Serviced/.test(m) ? "var(--lime)" : /^Flagged/.test(m) ? "var(--amber)" : /^Deleted/.test(m) ? "var(--red)" : /MySQL|CSV/.test(m) ? "var(--green)" : "var(--text-2)";
-    return `<div class="activity-row"><time>${esc(a.time)}</time><span class="dot" style="background:${color}"></span><span>${esc(m)}</span></div>`;
+    return `<div class="activity-row"><time>${esc(a.time)}</time><span class="dot" style="background:${color}"></span><span>${esc(m)}${a.user && a.user !== "system" ? ` <span class="by">· ${esc(a.user)}</span>` : ""}</span></div>`;
   }).join("");
 }

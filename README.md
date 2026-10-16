@@ -17,9 +17,10 @@ src/
   service/      EquipmentStore, MaintenanceManager, GymFloorPlan
   db/           DatabaseConnector, EquipmentDAO, DatasetImporter
   benchmark/    Benchmark
-  web/          WebServer, ApiRoutes (every /api address), Json (tiny JSON writer)
+  auth/         Role, User, UserStore, PasswordHasher, SessionManager
+  web/          WebServer (sign-in gate), ApiRoutes (every /api address), AuthRoutes (sign in, users), Json
   Main.java     start here: runs the web server and opens the browser
-web/            the UI: index.html, css/style.css, js/ (one file per page), img/logo.svg
+web/            the UI: login.html, index.html, css/style.css, js/ (one file per page), img/logo.svg
 data/equipment_dataset.csv   5,000 records
 lib/                         MySQL Connector/J
 schema.sql                   creates the database and table
@@ -37,8 +38,27 @@ db.properties.example        template for your MySQL password
 | Maintenance | Queue → Heap → Serviced as three folders | queue, max-heap, linked lists |
 | Floor & reports | BFS / DFS routes on the floor plan, sorting, searching race, BST, hash buckets | graph, sorts, searches, BST, hash table |
 | Benchmarks | measured times + charts next to the Big-O table | all of the above |
+| Users (admins) | add accounts, change roles, remove people | hash table, linked list |
 
 Press **Ctrl + K** anywhere to search equipment.
+
+## Accounts and roles
+
+Everyone signs in before seeing the dashboard. The first time the app runs there are no accounts, so the sign-in page asks you to **create the admin account**. After that, the admin adds everyone else on the **Users** page.
+
+| Role | Can do |
+|---|---|
+| Admin | everything, plus deleting equipment, clearing the heap / serviced list, and managing users |
+| Staff | flag, promote and service equipment; register and edit machines; run benchmarks |
+| Viewer | look at every page, change nothing |
+
+How it's protected (all plain Java, no libraries):
+
+- Passwords are stored only as salted **PBKDF2-SHA256** hashes (120,000 rounds) in `users.txt`, which is in `.gitignore`. Delete that file to start over with a new admin.
+- After signing in, the browser gets a random session cookie that is `HttpOnly` and `SameSite=Strict`. Sessions end after 30 minutes idle or 8 hours total.
+- 5 wrong passwords lock the account for 5 minutes. The error never says whether the username exists.
+- **Every** `/api` call is checked on the server: no session → 401, role too low → 403. Hidden buttons are only a convenience.
+- Changes must carry an `X-Requested-With` header that other websites can't add (CSRF protection), and every response sends security headers (CSP, no framing, no sniffing).
 
 ## How to run (VS Code)
 

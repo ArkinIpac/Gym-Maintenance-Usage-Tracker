@@ -157,10 +157,10 @@ App.pages.equipment = (() => {
           <div><span class="label">Priority</span><b class="gtext">${fmt(App.meta.conditions.indexOf(e.condition) * 10000 + e.usage)}</b></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
-          <button class="btn lime" data-act="flag">${ICON.flag} Flag for maintenance</button>
+          <button class="btn lime" data-act="flag" data-need="staff">${ICON.flag} Flag for maintenance</button>
           <div style="display:flex;gap:10px">
-            <button class="btn ghost" data-act="edit" style="flex:1">${ICON.edit} Edit</button>
-            <button class="btn danger" data-act="delete" style="flex:1">${ICON.trash} Delete</button>
+            <button class="btn ghost" data-act="edit" data-need="staff" style="flex:1">${ICON.edit} Edit</button>
+            <button class="btn danger" data-act="delete" data-need="admin" style="flex:1">${ICON.trash} Delete</button>
           </div>
         </div>
         <div style="margin-top:22px">
@@ -175,7 +175,7 @@ App.pages.equipment = (() => {
         ${ICON.box}
         <b style="color:var(--text);font-size:16px">Pick a machine</b>
         Select a row to flag, edit or delete it, or register a new one.
-        <button class="btn lime" data-act="new" style="margin-top:8px">${ICON.plus} Register equipment</button>
+        <button class="btn lime" data-act="new" data-need="staff" style="margin-top:8px">${ICON.plus} Register equipment</button>
       </div>`;
   }
 
@@ -224,7 +224,7 @@ App.pages.equipment = (() => {
   return {
     title: "Equipment",
     eyebrow: () => "Array · hash table · BST, always in sync",
-    actions: () => `<button class="btn lime" id="hdNewEq">${ICON.plus} Register equipment</button>`,
+    actions: () => `<button class="btn lime" id="hdNewEq" data-need="staff">${ICON.plus} Register equipment</button>`,
     bindActions: () => $("#hdNewEq").addEventListener("click", newItem),
     init,
     onShow: load,
