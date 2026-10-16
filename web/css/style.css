@@ -90,7 +90,8 @@ a { color: var(--lime); }
 
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 6px; }
 .brand-mark { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex: none; }
-.brand-name { font: 700 17px var(--f-display); letter-spacing: .5px; }
+.brand-name { font: italic 700 21px/1 "Chakra Petch", var(--f-body); letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
+.brand-name .gtext { padding-right: .08em; }
 .brand-sub { font-size: 12px; color: var(--text-3); }
 
 .nav { display: flex; flex-direction: column; gap: 4px; }
