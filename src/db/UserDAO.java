@@ -20,7 +20,7 @@ public class UserDAO implements UserRepository {
              Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery("SELECT * FROM app_users ORDER BY created_order")) {
             while (rs.next()) {
-                out.add(new User(rs.getString("username"), Role.valueOf(rs.getString("role")),
+                out.add(new User(rs.getString("username"), Role.parse(rs.getString("role")),
                         rs.getString("salt"), rs.getString("password_hash")));
             }
         } catch (SQLException e) {

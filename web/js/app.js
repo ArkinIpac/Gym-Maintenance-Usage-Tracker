@@ -9,7 +9,7 @@ const App = {
   current: null,
 };
 
-const RANK = { VIEWER: 0, STAFF: 1, ADMIN: 2 };
+const RANK = { MEMBER: 0, STAFF: 1, ADMIN: 2 };
 const can = (role) => !!App.user && RANK[App.user.role] >= RANK[role];
 
 // Server calls
@@ -174,7 +174,7 @@ async function refreshStatus() {
 // Signed-in user: sidebar chip, role class on <body> (CSS hides buttons the role can't use).
 function applyUser(user) {
   App.user = user;
-  document.body.classList.remove("role-VIEWER", "role-STAFF", "role-ADMIN");
+  document.body.classList.remove("role-MEMBER", "role-STAFF", "role-ADMIN");
   document.body.classList.add("role-" + user.role);
   const initial = user.username.charAt(0).toUpperCase();
   $("#userAvatar").textContent = initial;

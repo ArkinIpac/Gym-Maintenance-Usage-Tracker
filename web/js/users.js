@@ -2,11 +2,11 @@
 // The server checks the role on every call; hiding this page is only for convenience.
 
 App.pages.users = (() => {
-  const ROLES = [["VIEWER", "Viewer"], ["STAFF", "Staff"], ["ADMIN", "Admin"]];
+  const ROLES = [["MEMBER", "Member"], ["STAFF", "Staff"], ["ADMIN", "Admin"]];
   const ROLE_INFO = {
     ADMIN: "Everything, plus deleting equipment, clearing lists and managing users.",
     STAFF: "Flag, promote and service equipment; register and edit machines.",
-    VIEWER: "Can look at every page but can't change anything.",
+    MEMBER: "Gym members can look at every page but can't change anything.",
   };
 
   function init() {

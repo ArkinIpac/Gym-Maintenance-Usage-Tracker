@@ -63,7 +63,7 @@ public class ApiRoutes {
     // The lowest role allowed to call an address. Reading is open to every signed-in user;
     // anything not listed here is admin-only, so a new endpoint is locked down by default.
     public static Role requiredRole(String method, String path) {
-        if (!"POST".equalsIgnoreCase(method)) return Role.VIEWER;
+        if (!"POST".equalsIgnoreCase(method)) return Role.MEMBER;
         switch (path) {
             case "/api/maintenance/flag":
             case "/api/maintenance/flag-critical":

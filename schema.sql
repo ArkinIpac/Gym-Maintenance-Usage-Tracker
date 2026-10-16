@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS maintenance_log (
 -- Sign-in accounts. Only a random salt and a PBKDF2 hash, never the password.
 CREATE TABLE IF NOT EXISTS app_users (
     username         VARCHAR(32)  PRIMARY KEY,   -- stored in lowercase
-    role             VARCHAR(10)  NOT NULL,      -- ADMIN, STAFF, VIEWER
+    role             VARCHAR(10)  NOT NULL,      -- ADMIN, STAFF, MEMBER
     salt             VARCHAR(64)  NOT NULL,
     password_hash    VARCHAR(128) NOT NULL,
     created_order    INT          NOT NULL DEFAULT 0

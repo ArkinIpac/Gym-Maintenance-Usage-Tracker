@@ -161,9 +161,9 @@ public class AuthRoutes {
 
     private static Role parseRole(String s) {
         try {
-            return Role.valueOf(s == null ? "" : s.trim().toUpperCase());
+            return Role.parse(s);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Role must be admin, staff or viewer.");
+            throw new IllegalArgumentException("Role must be admin, staff or member.");
         }
     }
 

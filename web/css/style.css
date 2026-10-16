@@ -423,7 +423,7 @@ tbody tr.selected { background: rgba(200, 255, 0, .08); box-shadow: inset 3px 0 
 .tabbar { display: none; }
 
 /* Signed-in user and roles */
-body.role-VIEWER [data-need="staff"],
+body.role-MEMBER [data-need="staff"],
 body:not(.role-ADMIN) [data-need="admin"] { display: none !important; }
 
 .avatar {

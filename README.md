@@ -50,7 +50,7 @@ Everyone signs in before seeing the dashboard. The first time the app runs there
 |---|---|
 | Admin | everything, plus deleting equipment, clearing the heap / serviced list, and managing users |
 | Staff | flag, promote and service equipment; register and edit machines; run benchmarks |
-| Viewer | look at every page, change nothing |
+| Member | gym members: look at every page, change nothing |
 
 How it's protected (all plain Java, no libraries):
 

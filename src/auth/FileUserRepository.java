@@ -25,7 +25,7 @@ public class FileUserRepository implements UserRepository {
             for (String line : Files.readAllLines(file, StandardCharsets.UTF_8)) {
                 String[] p = line.trim().split("\\|");
                 if (p.length != 4) continue;
-                out.add(new User(p[0], Role.valueOf(p[1]), p[2], p[3]));
+                out.add(new User(p[0], Role.parse(p[1]), p[2], p[3]));
             }
         } catch (IOException | IllegalArgumentException e) {
             throw new IllegalStateException("Could not read " + file + ": " + e.getMessage(), e);
