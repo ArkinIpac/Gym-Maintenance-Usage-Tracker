@@ -1,15 +1,3 @@
-
-// EquipmentStore.java
-// Part of: Arkin Ipac  (array, add/delete, sync, sorting, searching)
-//          John Benedict Jesalva  (usage index / BST parts, marked below)
-// Presented in: Slide 4 (Arkin Ipac) - how the 3 structures stay in sync;
-//               Slides 5-8 (Arkin Ipac) - add, search, delete demo;
-//               Slide 11 (John Benedict Jesalva) - sorting and searching comparison.
-// What it does: Holds all 5,000 machines and keeps the array, hash table
-//               and BST in sync. Sorting and searching algorithms live here.
-// Used by: MainFrame, every page, MaintenanceManager, Benchmark, Main
-
-
 package service;
 
 import model.Equipment;
@@ -17,20 +5,16 @@ import structures.CustomBST;
 import structures.CustomHashTable;
 import structures.CustomLinkedList;
 
-// Holds all the equipment and keeps THREE structures in sync:
-//   Equipment[] array       -> master list; used for sorting, linear search, and the table on screen
-//   CustomHashTable (by ID) -> O(1) average lookup by ID, e.g. "EQ-04321"
-//   CustomBST (by usage)    -> ordered questions, e.g. "used between 3,000 and 3,050 times"
-//
-// The same Equipment object is referenced by all three (not copied), so there is only
-// one version of each machine. Every add, delete, and usage change goes through this
-// class, so the three structures can never disagree with each other.
-//
-// The sorting and searching algorithms are also here, because they work on the array.
+// Holds every machine in three structures that always stay in sync:
+//   array      - master list, used for sorting, linear search and the table on screen
+//   hash table - O(1) average lookup by ID
+//   BST        - ordered questions by usage count
+// All three point to the same Equipment objects, and every add, delete and usage change
+// goes through this class, so they can't disagree. The sorts and searches live here too.
 public class EquipmentStore {
 
-    private Equipment[] equipment;                        // the array
-    private int count;                                    // how many slots are actually used
+    private Equipment[] equipment;
+    private int count;                                    // slots actually in use
     private final CustomHashTable<String, Equipment> idIndex;
     private final CustomBST usageIndex;
 
@@ -38,7 +22,6 @@ public class EquipmentStore {
         this(16);
     }
 
-    // The hash table's starting capacity can be chosen (live change: "change capacity").
     public EquipmentStore(int hashCapacity) {
         equipment = new Equipment[8];
         count = 0;
@@ -46,9 +29,8 @@ public class EquipmentStore {
         usageIndex = new CustomBST();
     }
 
-    // Add 
-    // Array: O(1) amortized. Hash table: O(1) average. BST: O(log n) average.
-    // The duplicate check uses the hash table, so it costs O(1) instead of scanning the array.
+    // Array O(1) amortized, hash table O(1) average, BST O(log n) average.
+    // The duplicate check uses the hash table instead of scanning the array.
     public void addEquipment(Equipment e) {
         if (idIndex.contains(e.getEquipmentId())) {
             throw new IllegalArgumentException("Equipment ID already exists: " + e.getEquipmentId());
@@ -59,19 +41,15 @@ public class EquipmentStore {
         usageIndex.insert(e);
     }
 
-    // When the array is full we DOUBLE it instead of adding 1 slot.
-    // Copying n items is O(n), but after doubling we get n free slots before the next copy,
-    // so on average each add is still O(1) (amortized).
+    // Doubling (instead of adding one slot) keeps each add O(1) on average.
     private void grow() {
         Equipment[] bigger = new Equipment[equipment.length * 2];
         System.arraycopy(equipment, 0, bigger, 0, count);
         equipment = bigger;
     }
 
-    // Delete: O(n) 
-    // The hash table finds the object in O(1), but the array still needs O(n):
-    // we find its position, then shift every item after it one step left to close the gap.
-    // Removed from all three structures. Returns null if the ID doesn't exist.
+    // O(n): the hash table finds the machine instantly, but the array still has to shift
+    // everything after it one step left. Returns null if the ID doesn't exist.
     public Equipment deleteEquipment(String id) {
         Equipment target = idIndex.get(id);
         if (target == null) return null;
@@ -80,22 +58,18 @@ public class EquipmentStore {
         for (int i = 0; i < count; i++) {
             if (equipment[i] == target) { index = i; break; }
         }
-        for (int i = index; i < count - 1; i++) {   // shift left
+        for (int i = index; i < count - 1; i++) {
             equipment[i] = equipment[i + 1];
         }
-        equipment[--count] = null;                  // clear the old last slot
+        equipment[--count] = null;
 
         idIndex.remove(id);
         usageIndex.delete(target);
         return target;
     }
 
-    // usage index: updateUsage() keeps the BST correct
-    // Updates 
-
-    // Usage count is the BST key. If we changed it in place, the equipment would stay in the
-    // node for its OLD count and BST searches would miss it. So: delete from the BST with the
-    // old value, change the number, insert again with the new value.
+    // Usage is the BST key, so changing it in place would leave the machine under its old
+    // key. Remove, change, insert again.
     public void updateUsage(Equipment e, int newUsage) {
         if (newUsage < 0) throw new IllegalArgumentException("Usage count cannot be negative.");
         usageIndex.delete(e);
@@ -103,12 +77,8 @@ public class EquipmentStore {
         usageIndex.insert(e);
     }
 
-    // Edit (the Edit button on the Equipment page)
-    // Changes everything except the ID. Checks the input BEFORE changing anything, so a bad
-    // edit leaves the machine untouched.
-    //   name, category, location, condition -> not keys anywhere, just set them: O(1)
-    //   usage -> it's the BST key, so it goes through updateUsage() (delete + re-insert): O(log n)
-    // The array and hash table hold the same object, so they see the change automatically.
+    // Everything except the ID. Input is checked first so a bad edit changes nothing.
+    // Only usage needs re-indexing; the array and hash table share the same object.
     public void updateDetails(Equipment e, String name, Equipment.Category category, String location,
                               Equipment.Condition condition, int usage) {
         if (name == null || name.trim().isEmpty()) throw new IllegalArgumentException("Equipment name cannot be empty.");
@@ -117,46 +87,37 @@ public class EquipmentStore {
         e.setCategory(category);
         e.setLocation(location);
         updateCondition(e, condition);
-        if (usage != e.getUsageCount()) updateUsage(e, usage);   // only touch the BST if the key changed
+        if (usage != e.getUsageCount()) updateUsage(e, usage);
     }
 
-    // Condition is not a key in any structure, so nothing needs re-indexing.
-    // It still goes through here so all changes happen in one place.
     public void updateCondition(Equipment e, Equipment.Condition newCondition) {
         e.setCondition(newCondition);
     }
 
-    // Read access
-
     public int getCount() { return count; }
 
-    // Returns a copy sized to 'count', so other classes can sort or change it
-    // without touching our real array.
+    // A copy, so callers can sort it without touching the real array.
     public Equipment[] getAll() {
         Equipment[] copy = new Equipment[count];
         System.arraycopy(equipment, 0, copy, 0, count);
         return copy;
     }
 
-    // [Jesalva] BST range query and access to the BST
     public CustomLinkedList<Equipment> getByUsageRange(int min, int max) {
         return usageIndex.getInRange(min, max);
     }
 
-    // Used by the Reports page for traversals, the collision demo, and stats.
     public CustomBST getUsageIndex() { return usageIndex; }
     public CustomHashTable<String, Equipment> getIdIndex() { return idIndex; }
 
-    // [Arkin Ipac] searching and sorting 
     // Searching
 
-    // Hash table lookup: O(1) average. This is what the app uses for normal searches.
+    // Hash table, O(1) average. This is what the app uses.
     public Equipment findById(String id) {
         return idIndex.get(id);
     }
 
-    // Linear search: O(n). Checks one record at a time from the start.
-    // Works on unsorted data; we keep it as the baseline for comparison.
+    // Linear search, O(n). Kept as the baseline for comparison.
     public Equipment linearSearchById(String id) {
         for (int i = 0; i < count; i++) {
             if (equipment[i].getEquipmentId().equals(id)) return equipment[i];
@@ -164,39 +125,30 @@ public class EquipmentStore {
         return null;
     }
 
-    // Binary search: O(log n). Only works on an array sorted by ID (ascending),
-    // so the caller passes in sortByIdInsertion(true).
-    // Each step checks the middle and throws away the half that can't contain the ID.
-    // 5,000 records -> about 13 steps at most (2^13 = 8,192).
-    // IDs are compared as Strings; this works because they all have the same
-    // format and length (EQ- plus 5 digits), so "EQ-00010" < "EQ-00100".
+    // Binary search, O(log n), on an array sorted by ID (pass in sortByIdInsertion(true)).
+    // About 13 steps at most for 5,000 records. Comparing IDs as strings works because they
+    // all have the same format and length.
     public Equipment binarySearchById(Equipment[] sortedById, String id) {
         int lo = 0, hi = sortedById.length - 1;
         while (lo <= hi) {
-            int mid = lo + (hi - lo) / 2;   // same as (lo + hi) / 2, but lo + hi can't overflow
+            int mid = lo + (hi - lo) / 2;   // avoids overflow from (lo + hi)
             int cmp = sortedById[mid].getEquipmentId().compareTo(id);
             if (cmp == 0) return sortedById[mid];
-            if (cmp < 0) lo = mid + 1;      // middle is smaller: answer is on the right
-            else hi = mid - 1;              // middle is bigger: answer is on the left
+            if (cmp < 0) lo = mid + 1;
+            else hi = mid - 1;
         }
         return null;
     }
 
-    // [Jesalva]
-    // BST search by exact usage count: O(log n) average.
+    // BST, O(log n) average.
     public CustomLinkedList<Equipment> findByUsage(int usageCount) {
         return usageIndex.search(usageCount);
     }
 
-    // Sorting (always on a COPY, the master array is never reordered)
+    // Sorting (always on a copy, the real array keeps its order)
 
-    // Bubble sort by usage count.
-    // Each pass compares neighbors and swaps them if they're in the wrong order, so the
-    // biggest value "bubbles" to the end. After pass i, the last i items are final, which
-    // is why the inner loop stops at length - 1 - i.
-    // O(n^2) average and worst. O(n) best: if a whole pass makes no swap, the array is
-    // already sorted and we stop early.
-    // ascending = true -> least used first; false -> most used first.
+    // Bubble sort by usage. O(n^2), or O(n) if a pass makes no swaps (already sorted).
+    // After pass i the last i items are in place, so the inner loop gets shorter.
     public Equipment[] sortByUsageCountBubble(boolean ascending) {
         Equipment[] a = getAll();
         for (int i = 0; i < a.length - 1; i++) {
@@ -211,35 +163,30 @@ public class EquipmentStore {
                     swapped = true;
                 }
             }
-            if (!swapped) break;   // early exit
+            if (!swapped) break;
         }
         return a;
     }
 
-    // Insertion sort by equipment ID.
-    // Take the next item ('key'), shift the bigger items before it one step right, and
-    // drop the key into the gap. The left part of the array is always sorted.
-    // O(n^2) worst, but O(n) when the data is almost sorted: our data loads in ID order,
-    // so every key is already in place (4,999 comparisons, 0 shifts for 5,000 records).
-    // ascending = true -> EQ-00001 first. Binary search needs this order.
+    // Insertion sort by ID. O(n^2) worst, but close to O(n) here because the data already
+    // loads in ID order. Binary search needs this order.
     public Equipment[] sortByIdInsertion(boolean ascending) {
         Equipment[] a = getAll();
         for (int i = 1; i < a.length; i++) {
             Equipment key = a[i];
             int j = i - 1;
             while (j >= 0 && outOfOrderById(a[j], key, ascending)) {
-                a[j + 1] = a[j];     // shift right to make room
+                a[j + 1] = a[j];
                 j--;
             }
-            a[j + 1] = key;          // drop the key into the gap
+            a[j + 1] = key;
         }
         return a;
     }
 
-    // Insertion sort by usage count. Same key as the bubble sort, so the benchmark
-    // compares both algorithms on exactly the same job.
-    // Both make the same number of moves (6,241,429 at 5,000 records), but one shift is a
-    // single assignment while one swap is three, so insertion sort finishes about 4x faster.
+    // Insertion sort by usage, the same job as the bubble sort so the benchmark is fair.
+    // Same number of moves, but a shift is one assignment and a swap is three, so this
+    // finishes about 4x faster.
     public Equipment[] sortByUsageCountInsertion(boolean ascending) {
         Equipment[] a = getAll();
         for (int i = 1; i < a.length; i++) {
@@ -255,13 +202,11 @@ public class EquipmentStore {
         return a;
     }
 
-    // True if 'left' should come after 'right' in the chosen order.
     private boolean outOfOrderById(Equipment left, Equipment right, boolean ascending) {
         int cmp = left.getEquipmentId().compareTo(right.getEquipmentId());
         return ascending ? cmp > 0 : cmp < 0;
     }
 
-    // Shortcuts with ascending as the default.
     public Equipment[] sortByUsageCountBubble() { return sortByUsageCountBubble(true); }
     public Equipment[] sortByIdInsertion() { return sortByIdInsertion(true); }
 }

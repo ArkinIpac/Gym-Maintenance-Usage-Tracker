@@ -1,48 +1,19 @@
-// CustomHeap.java
-// Part of: Krissy Mae Gomez  (Heap + Priority Processing)
-// Presented in: Slides 5-8 (Arkin Ipac) - heap order in the demo;
-//               Slide 12 (Arkin Ipac) - why the severity weight is 10,000.
-// What it does: Max-heap that ranks flagged equipment so the most urgent
-//               machine is always serviced first.
-// Used by: MaintenanceManager
 package structures;
 
 import model.Equipment;
 
-// Our own MAX-heap, stored in a plain array. The most urgent equipment is always at index 0.
-//
-// The array IS the tree. For the item at index i:
-//   parent      = (i - 1) / 2
-//   left child  = 2i + 1
-//   right child = 2i + 2
-// So we don't need node objects or left/right pointers.
-//
-// Heap rule: every parent has a priority >= its children. The array is NOT fully sorted,
-// only the top (index 0) is guaranteed to be the biggest. That is all we need, because the
-// technician only ever asks "what should I fix next?"
-//
-// Why a heap: a sorted array would cost O(n) per insert to keep it in order; scanning an
-// unsorted array for the max costs O(n) per service. The heap does both in O(log n).
+// Max-heap stored in an array, so the most urgent machine is always at index 0.
+// For index i: parent = (i - 1) / 2, left = 2i + 1, right = 2i + 2.
+// Only the top is guaranteed to be the biggest, which is all "what do I fix next?" needs.
+// Insert and remove are O(log n), versus O(n) for a sorted or unsorted array.
 public class CustomHeap {
 
-    // Priority formula 
-    //   priority = severity * severityWeight + usageCount * usageWeight
-    //   severity = condition.ordinal():  EXCELLENT 0, GOOD 1, FAIR 2, POOR 3, CRITICAL 4
-    //
-    // Why 10,000 for severity:
-    //   Condition is the safety issue, so a worse condition must ALWAYS rank higher.
-    //   The highest usage in our dataset is 5,989. One step of severity (10,000) is bigger
-    //   than any possible usage difference, so usage can never push a POOR machine above a
-    //   CRITICAL one. Usage only decides the order inside the same condition: between two
-    //   POOR treadmills, the busier one goes first because more members use it.
-    //
-    //   Example: EQ-00202 CRITICAL, 194 uses -> 4 * 10,000 + 194   = 40,194
-    //            EQ-00155 POOR,   5,137 uses -> 3 * 10,000 + 5,137 = 35,137  (CRITICAL wins)
-    //
-    // The app always uses these two values (10,000 and 1); the Maintenance page has no
-    // control for changing them. They are still variables instead of numbers typed into
-    // the formula, so the rule lives in one place and setWeights() can change it if the
-    // gym ever decides usage should count more. Main tests that bad weights are rejected.
+    // priority = severity * severityWeight + usage * usageWeight
+    // Severity is condition.ordinal() (Excellent 0 ... Critical 4).
+    // 10,000 is bigger than the highest usage in the data (5,989), so a worse condition
+    // always wins and usage only breaks ties within the same condition.
+    //   EQ-00202 Critical, 194 uses   -> 40,194
+    //   EQ-00155 Poor,     5,137 uses -> 35,137
     public static final long DEFAULT_SEVERITY_WEIGHT = 10_000;
     public static final long DEFAULT_USAGE_WEIGHT = 1;
 
@@ -57,15 +28,12 @@ public class CustomHeap {
         size = 0;
     }
 
-    // Returns long, not int, so the result can't overflow even with very large weights.
-    // FORMULA OF THE HEAP PRIORITY
+    // long so large weights can't overflow
     public long priorityOf(Equipment e) {
         return e.getCondition().ordinal() * severityWeight + e.getUsageCount() * usageWeight;
     }
 
-    //  Insert: O(log n) 
-    // Put the new item in the next free slot (bottom of the tree), then bubble it up:
-    // keep swapping with its parent while it has a higher priority.
+    // O(log n): add at the bottom, then bubble up.
     public void insert(Equipment e) {
         if (size == items.length) {
             grow();
@@ -75,10 +43,7 @@ public class CustomHeap {
         size++;
     }
 
-    // Remove the most urgent: O(log n) 
-    // 1. Save the root (index 0), that is our answer.
-    // 2. Move the LAST item into the root so the tree has no hole.
-    // 3. Bubble it down until the heap rule holds again.
+    // O(log n): take the root, move the last item to the top, then bubble it down.
     public Equipment extractMax() {
         if (size == 0) {
             throw new IllegalStateException("Heap is empty.");
@@ -93,7 +58,6 @@ public class CustomHeap {
         return max;
     }
 
-    // Look at the most urgent item without removing it. O(1).
     public Equipment peek() {
         if (size == 0) {
             throw new IllegalStateException("Heap is empty.");
@@ -101,18 +65,16 @@ public class CustomHeap {
         return items[0];
     }
 
-    // Remove a specific item: O(n) find + O(log n) fix
-    // Used when equipment is deleted while it is still waiting in the heap.
-    // A heap is not sorted, so the only way to find an item is to scan the array.
+    // O(n) to find it (a heap isn't sorted) + O(log n) to fix the order.
+    // Used when a machine is deleted or edited while it's waiting.
     public boolean remove(Equipment e) {
         for (int i = 0; i < size; i++) {
             if (items[i] == e) {
                 size--;
-                items[i] = items[size];        // fill the hole with the last item
+                items[i] = items[size];
                 items[size] = null;
                 if (i < size) {
-                    // The moved item might be too big for this spot OR too small.
-                    // Only one of these will actually move it.
+                    // The moved item may belong higher or lower; only one of these moves it.
                     bubbleUp(i);
                     bubbleDown(i);
                 }
@@ -122,11 +84,8 @@ public class CustomHeap {
         return false;
     }
 
-    //  Change the weights (not used by the app's screens; tested in Main)
-    // New weights = new priorities, so the old order may be wrong. We rebuild it with
-    // HEAPIFY: bubble down every parent, starting from the last parent (size/2 - 1) up to
-    // the root. Leaves (the second half of the array) have no children, so we skip them.
-    // This is O(n), faster than taking everything out and inserting it again (O(n log n)).
+    // New weights change every priority, so rebuild the heap: bubble down each parent
+    // from the last one up to the root. O(n), cheaper than re-inserting everything.
     public void setWeights(long newSeverityWeight, long newUsageWeight) {
         if (newSeverityWeight < 0 || newUsageWeight < 0) {
             throw new IllegalArgumentException("Weights cannot be negative.");
@@ -154,29 +113,25 @@ public class CustomHeap {
         return size;
     }
 
-    // A copy of the array in heap order (not sorted), so the UI can display it
-    // without being able to change the real heap.
+    // Copy in heap order (not sorted), so the UI can't change the real heap.
     public Equipment[] snapshot() {
         Equipment[] copy = new Equipment[size];
         System.arraycopy(items, 0, copy, 0, size);
         return copy;
     }
 
-    //  Helpers 
-    // Move item i up while it is bigger than its parent.
     private void bubbleUp(int i) {
         while (i > 0) {
             int parent = (i - 1) / 2;
             if (priorityOf(items[i]) <= priorityOf(items[parent])) {
-                break;   // parent is bigger: done
-
-                        }swap(i, parent);
+                break;
+            }
+            swap(i, parent);
             i = parent;
         }
     }
 
-    // Move item i down while one of its children is bigger. Always swap with the
-    // BIGGER child, so the new parent is larger than both children.
+    // Swap with the bigger child so the new parent beats both children.
     private void bubbleDown(int i) {
         while (true) {
             int left = 2 * i + 1;
@@ -189,9 +144,9 @@ public class CustomHeap {
                 largest = right;
             }
             if (largest == i) {
-                break;                                         // already bigger than both children
-
-                        }swap(i, largest);
+                break;
+            }
+            swap(i, largest);
             i = largest;
         }
     }
@@ -202,7 +157,6 @@ public class CustomHeap {
         items[j] = temp;
     }
 
-    // Array is full: make a new one twice as big and copy everything over.
     private void grow() {
         Equipment[] bigger = new Equipment[items.length * 2];
         System.arraycopy(items, 0, bigger, 0, items.length);

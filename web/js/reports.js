@@ -1,11 +1,9 @@
-// reports.js
-// Floor & reports: one tool per data structure / algorithm.
-//   Floor plan (graph BFS / DFS) · Sorting · Searching · BST · Hash table
+// Floor & reports page: graph routes, sorting, searching, BST and hash table tools.
 
 App.pages.reports = (() => {
   const TOOLS = [["graph", "Floor plan"], ["sorting", "Sorting"], ["searching", "Searching"], ["bst", "BST"], ["hash", "Hash table"]];
 
-  // Floor-plan positions on a 10 x 6.7 grid (same layout the Swing FloorPlanView used).
+  // Where each zone sits on the drawing, on a 10 x 6.7 grid.
   const POS = {
     "Entrance": [0.0, 3.0], "Cardio Zone A": [2.0, 0.5], "Cardio Zone B": [4.5, 0.5], "Cardio Mezzanine": [7.0, 0.5],
     "Rooftop Deck": [9.5, 0.5], "Strength Floor": [2.0, 2.6], "Machine Row 1": [4.5, 2.0], "Machine Row 2": [7.0, 2.2],
@@ -147,7 +145,7 @@ App.pages.reports = (() => {
     $$("#page-reports .tool").forEach((t) => t.classList.toggle("active", t.id === "tool-" + key));
   }
 
-  // ================= Graph =================
+  // Graph
   const gx = (z) => 70 + (POS[z][0] / 10) * 860;
   const gy = (z) => 50 + (POS[z][1] / 6.7) * 520;
 
@@ -198,7 +196,7 @@ App.pages.reports = (() => {
       + `\nVisit order from ${from}: ${r.visitOrder.join(", ")}`;
   }
 
-  // ================= Sorting =================
+  // Sorting
   async function runSort(btn) {
     const algo = $("#sAlgo").value, order = $("#sOrder").value, limit = Math.max(1, intOf("#sLimit"));
     btn.disabled = true;
@@ -212,7 +210,7 @@ App.pages.reports = (() => {
     $("#sBody").innerHTML = r.rows.map((e, i) => `<tr><td class="muted">${i + 1}</td><td class="mono" style="color:var(--lime)">${esc(e.id)}</td><td>${esc(e.name)}</td><td>${condPill(e.condition)}</td><td class="num mono">${fmt(e.usage)}</td></tr>`).join("");
   }
 
-  // ================= Searching =================
+  // Searching
   function raceHtml(results) {
     const label = { hash: "Hash", binary: "Binary", linear: "Linear" };
     const max = Math.max(1, ...results.map((r) => r.ns));
@@ -247,7 +245,7 @@ App.pages.reports = (() => {
     drawTree();
   }
 
-  // ================= BST =================
+  // BST
   async function loadTree() {
     tree = await api("/api/bst/tree");
     if (!tree.ok) return;
@@ -317,7 +315,7 @@ App.pages.reports = (() => {
     $("#bOut").textContent = s;
   }
 
-  // ================= Hash =================
+  // Hash
   function drawBuckets(buckets, hitIndex, key) {
     $("#hBuckets").innerHTML = buckets.map((b) => `
       <div class="bucket ${b.index === hitIndex ? "hit" : ""}">

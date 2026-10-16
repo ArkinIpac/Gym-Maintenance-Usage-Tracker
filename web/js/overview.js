@@ -1,7 +1,4 @@
-// overview.js
-// Dashboard: the heap at a glance, the next machine to service, fleet health,
-// equipment folders by category, the top of the heap, hot zones and recent activity.
-// Everything comes from one call: GET /api/overview.
+// Overview page. Everything comes from one call to /api/overview.
 
 App.pages.overview = (() => {
   const COND_COLORS = { EXCELLENT: "#C8FF00", GOOD: "#8CB300", FAIR: "#BDBDBD", POOR: "#FF9A3C", CRITICAL: "#FF4545" };
@@ -183,7 +180,7 @@ App.pages.overview = (() => {
   };
 })();
 
-// Shared by Overview and Maintenance: the activity feed rows.
+// Activity feed rows, used by Overview and Maintenance.
 function activityHtml(list) {
   if (!list || !list.length) return `<div class="empty-state">${ICON.clock}No activity yet.</div>`;
   return list.map((a) => {

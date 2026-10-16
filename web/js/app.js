@@ -1,7 +1,5 @@
-// app.js
-// The shell of the web app: talking to the Java server, page switching, the sidebar
-// numbers, toasts, dialogs and the Ctrl+K search. Each page file (overview.js, ...)
-// registers itself in App.pages and this file calls its init() once and onShow() on every visit.
+// Shared shell: server calls, page switching, sidebar numbers, toasts, dialogs and Ctrl+K search.
+// Each page registers itself in App.pages; init() runs once and onShow() on every visit.
 
 const App = {
   pages: {},       // App.pages.overview = { title, eyebrow, actions, init, onShow }
@@ -10,7 +8,7 @@ const App = {
   current: null,
 };
 
-// ---------- Talking to Java ----------
+// Server calls
 // GET:  await api("/api/status")
 // POST: await api("/api/maintenance/flag", { id: "EQ-00042" })  (sent as form fields)
 async function api(path, postData) {
@@ -27,7 +25,7 @@ async function api(path, postData) {
   }
 }
 
-// A POST that changes data: shows its message as a toast and refreshes the sidebar.
+// POST that changes data, then shows the result and refreshes the sidebar.
 async function action(path, postData, button) {
   if (button) button.disabled = true;           // no double clicks while waiting
   const r = await api(path, postData || {});
@@ -37,7 +35,7 @@ async function action(path, postData, button) {
   return r;
 }
 
-// ---------- Small helpers ----------
+// Small helpers
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const fmt = (n) => Number(n).toLocaleString("en-US");
@@ -58,7 +56,7 @@ function options(items, selected) {
   }).join("");
 }
 
-// Line icons used by the pages (all stroke = currentColor).
+// Line icons, drawn in currentColor.
 const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
@@ -72,7 +70,7 @@ const ICON = {
   play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
 };
 
-// ---------- Toasts ----------
+// Toasts
 function toast(message, isError = false) {
   const t = document.createElement("div");
   t.className = "toast glass" + (isError ? " err" : "");
@@ -84,8 +82,7 @@ function toast(message, isError = false) {
   setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 260); }, 3800);
 }
 
-// ---------- Dialogs ----------
-// confirmDialog() resolves true/false. infoDialog() just shows content with a Close button.
+// Dialogs
 let lastFocus = null;
 function openDialog(title, bodyHtml, actionsHtml) {
   lastFocus = document.activeElement;
@@ -115,7 +112,7 @@ function infoDialog(title, bodyHtml) {
   $("#dialog").onclick = (e) => { if (e.target.id === "dialog" || e.target.closest("[data-r]")) closeDialog(); };
 }
 
-// ---------- Ctrl+K search ----------
+// Ctrl+K search
 let paletteRows = [], paletteIndex = 0, paletteTimer;
 function openPalette() {
   lastFocus = document.activeElement;
@@ -147,7 +144,7 @@ function pickPalette(i) {
   App.pages.equipment.focusOn(e.id);
 }
 
-// ---------- Sidebar numbers + database status ----------
+// Sidebar numbers + database status
 async function refreshStatus() {
   const s = await api("/api/status");
   if (!s.ok) return null;
@@ -163,7 +160,7 @@ async function refreshStatus() {
   return s;
 }
 
-// ---------- Page switching ----------
+// Page switching
 function showPage(key) {
   if (!App.pages[key]) key = "overview";
   const page = App.pages[key];
@@ -187,11 +184,11 @@ function today() {
   return new Date().toLocaleDateString("en-US", { weekday: "short", day: "numeric", month: "short" });
 }
 
-// ---------- Start ----------
+// Start
 document.addEventListener("DOMContentLoaded", async () => {
   window.addEventListener("hashchange", () => showPage(location.hash.slice(1)));
 
-  // Ctrl+K / Cmd+K opens search; Esc closes overlays.
+  // Ctrl+K opens search; Esc closes overlays.
   document.addEventListener("keydown", (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); }
     if (e.key === "Escape") { if (!$("#palette").hidden) closePalette(); else if (!$("#dialog").hidden) $("#dialog").click(); }

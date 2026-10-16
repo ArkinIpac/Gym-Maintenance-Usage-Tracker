@@ -1,26 +1,3 @@
-// ApiRoutes.java
-// Part of: Arkin Ipac  (Integration / web version)
-// What it does: Every /api/... address the web page can call. Each method does the same
-//               thing as a button in the Swing app (same store / manager calls, same
-//               MySQL handling), but answers with JSON instead of updating a JTable.
-// Used by: WebServer
-//
-// GET  = only reads data.   POST = changes something.
-//
-//  App      GET  /api/status                      header chips + db status
-//           GET  /api/meta                        categories, conditions, zones (for dropdowns)
-//  Equipment GET /api/equipment?q=&category=&offset=&limit=
-//           POST /api/equipment/add | /update | /delete
-//  Maint.   GET  /api/maintenance                 queue/heap stats, top 25 of heap, recent list
-//           POST /api/maintenance/flag | /flag-critical | /promote | /service | /clear-heap | /clear-recent
-//           GET  /api/maintenance/history?id=
-//  Reports  GET  /api/sort?algo=&order=&limit=
-//           GET  /api/search?id=&mode=hash|linear|binary|all     /api/search/usage?usage=
-//           GET  /api/bst/tree   /api/bst/range?min=&max=   /api/bst/traverse?order=
-//           GET  /api/hash/locate?id=   /api/hash/demo
-//           GET  /api/graph   /api/graph/route?from=&to=&algo=bfs|dfs
-//  Bench.   POST /api/benchmark      GET /api/complexity
-
 package web;
 
 import benchmark.Benchmark;
@@ -39,6 +16,14 @@ import structures.CustomGraph;
 import structures.CustomHashTable;
 import structures.CustomLinkedList;
 
+// Every /api address the page calls. GET reads, POST changes something.
+//   /api/status /api/meta /api/overview
+//   /api/equipment          + /add /update /delete
+//   /api/maintenance        + /flag /flag-critical /promote /service /clear-heap /clear-recent /history
+//   /api/sort /api/search /api/search/usage
+//   /api/bst/tree /api/bst/range /api/bst/traverse
+//   /api/hash/locate /api/hash/demo /api/graph /api/graph/route
+//   /api/benchmark /api/complexity
 public class ApiRoutes {
 
     // What every handler returns: an HTTP status and a JSON body.
@@ -112,8 +97,7 @@ public class ApiRoutes {
             return error(400, "Please fill in every field.");
         }
     }
-
-    // ================= App =================
+    // App
 
     private Response status() {
         return ok(new Json().obj()
@@ -138,10 +122,10 @@ public class ApiRoutes {
         return ok(j.end().end());
     }
 
-    // ================= Overview (dashboard) =================
+    // Overview
 
-    // Everything the dashboard shows, in one request. One pass over the array (O(n))
-    // counts conditions, categories and critical machines per zone at the same time.
+    // Everything the dashboard needs in one request. One O(n) pass counts conditions,
+    // categories and critical machines per zone together.
     private Response overview() {
         Equipment.Condition[] conds = Equipment.Condition.values();
         Equipment.Category[] cats = Equipment.Category.values();
@@ -203,10 +187,10 @@ public class ApiRoutes {
         return ok(j.end());
     }
 
-    // ================= Equipment page =================
+    // Equipment page
 
-    // Partial-text search on ID, name or location + category filter: O(n), same as the
-    // Swing table. Only one page of rows is sent back, so the browser stays fast.
+    // Partial-text search on ID, name or zone plus a category filter, O(n).
+    // Only one page of rows is sent back.
     private Response listEquipment(Map<String, String> p) {
         String q = p.getOrDefault("q", "").trim().toLowerCase();
         String category = p.getOrDefault("category", "");
@@ -293,7 +277,7 @@ public class ApiRoutes {
         return message("Deleted " + e.getEquipmentId() + " - " + e.getName() + offlineNote(db));
     }
 
-    // ================= Maintenance page =================
+    // Maintenance page
 
     private Response maintenanceState() {
         Equipment[] heap = manager.getHeapSnapshot();
@@ -315,7 +299,7 @@ public class ApiRoutes {
         for (Equipment.Condition c : Equipment.Condition.values()) j.put(c.name(), counts[c.ordinal()]);
         j.end();
 
-        // Top 25 by priority (same selection pass as MaintenancePanel; the heap is not changed).
+        // Top 25 by priority, picked from a copy so the heap isn't changed.
         j.key("top").arr();
         for (Equipment e : topByPriority(heap, HEAP_ROWS)) {
             j.obj().put("id", e.getEquipmentId()).put("name", e.getName())
@@ -405,7 +389,7 @@ public class ApiRoutes {
         return ok(j.end().end());
     }
 
-    // ================= Reports page =================
+    // Reports page
 
     private Response sort(Map<String, String> p) {
         String algo = p.getOrDefault("algo", "bubble");
@@ -421,7 +405,7 @@ public class ApiRoutes {
         return ok(j.end().end());
     }
 
-    // Times one strategy (or all three) on the same ID, like the Searching tool.
+    // Times one strategy, or all three, on the same ID.
     private Response search(Map<String, String> p) {
         String id = p.getOrDefault("id", "").trim();
         String mode = p.getOrDefault("mode", "all");
@@ -567,7 +551,7 @@ public class ApiRoutes {
         return ok(j.end().end());
     }
 
-    // ================= Benchmarks page =================
+    // Benchmarks page
 
     private Response benchmark() {
         Benchmark.Row[] rows = Benchmark.measure(store.getAll());
@@ -590,18 +574,17 @@ public class ApiRoutes {
         return ok(j.end().end());
     }
 
-    // ================= Helpers =================
+    // Helpers
 
     private static Response ok(Object json) { return new Response(200, json.toString()); }
 
-    // Every successful change is also written to the activity feed.
+    // Successful changes also go to the activity feed.
     private Response message(String msg) {
         logActivity(msg);
         return ok(new Json().obj().put("ok", true).put("message", msg).end());
     }
 
-    // Activity feed: newest first, last 20 kept. Same trick as "recently serviced":
-    // addFirst() for the new entry, removeLast() to drop the oldest. Uses our own linked list.
+    // Newest first, last 20 kept: addFirst() the new one, removeLast() the oldest.
     private void logActivity(String msg) {
         activity.addFirst(new String[]{LocalTime.now().format(CLOCK), msg});
         if (activity.size() > ACTIVITY_LIMIT) activity.removeLast();

@@ -1,13 +1,3 @@
-// WebServer.java
-// Part of: Arkin Ipac  (Integration / web version)
-// What it does: Starting point of the WEB version of the app. Does the same job as
-//               MainFrame (load the data into ONE store + ONE manager), but instead of
-//               opening a Swing window it starts a small HTTP server:
-//                 /api/...  -> JSON answers from our data structures (see ApiRoutes)
-//                 anything else -> the HTML/CSS/JS files in the web/ folder
-// Run: web.WebServer, then open http://localhost:8080 in the browser.
-// Uses only the JDK (com.sun.net.httpserver), no Spring or other frameworks.
-
 package web;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -30,12 +20,14 @@ import model.Equipment;
 import service.EquipmentStore;
 import service.MaintenanceManager;
 
+// Loads the data once, then serves the web/ folder and answers /api/... requests with JSON.
+// Uses the JDK's built-in HTTP server, no frameworks.
 public class WebServer {
 
-    // Same idea as MainFrame: one store and one manager shared by every request.
+    // One store and one manager shared by every request.
     private final EquipmentStore store = new EquipmentStore();
     private final MaintenanceManager manager = new MaintenanceManager(store);
-    private EquipmentDAO dao = new EquipmentDAO();   // null = offline (CSV), changes are not saved
+    private EquipmentDAO dao = new EquipmentDAO();   // null when offline (CSV), changes aren't saved
     private String loadMessage = "";
 
     private final ApiRoutes api;
@@ -46,7 +38,7 @@ public class WebServer {
         api = new ApiRoutes(store, manager, () -> dao, loadMessage);
     }
 
-    // MySQL first, CSV as backup -- exactly like MainFrame.loadData().
+    // MySQL first, the CSV if MySQL can't be reached.
     private void loadData() {
         List<Equipment> all;
         try {
@@ -68,8 +60,7 @@ public class WebServer {
         System.out.println(loadMessage);
     }
 
-    // The default executor runs requests one at a time on a single thread. That is on
-    // purpose: our structures are not thread-safe, and one gym's traffic is tiny.
+    // Requests run one at a time on purpose: our structures aren't thread-safe.
     public void start(int port) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", this::handle);
@@ -96,12 +87,10 @@ public class WebServer {
         }
     }
 
-    // Static files
-
     private void serveFile(HttpExchange ex, String path) throws IOException {
         if (path.equals("/")) path = "/index.html";
         Path file = webRoot.resolve(path.substring(1)).normalize();
-        // Never serve anything outside the web/ folder (blocks requests like /../db.properties).
+        // Never serve files outside web/ (blocks things like /../db.properties).
         if (!file.startsWith(webRoot) || !Files.isRegularFile(file)) {
             send(ex, 404, "text/plain; charset=utf-8", "Not found".getBytes(StandardCharsets.UTF_8));
             return;
@@ -118,8 +107,6 @@ public class WebServer {
         if (name.endsWith(".ico"))  return "image/x-icon";
         return "application/octet-stream";
     }
-
-    // Small helpers
 
     private static void send(HttpExchange ex, int status, String type, byte[] body) throws IOException {
         ex.getResponseHeaders().set("Content-Type", type);
@@ -149,7 +136,7 @@ public class WebServer {
         return map;
     }
 
-    // Port 8080 on your PC. On Azure App Service the PORT environment variable is set for us.
+    // 8080 on a PC; Azure sets PORT.
     public static void main(String[] args) throws IOException {
         String env = System.getenv("PORT");
         int port = env != null && !env.isEmpty() ? Integer.parseInt(env) : 8080;

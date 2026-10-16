@@ -1,13 +1,3 @@
-
-// Benchmark.java
-// Part of: Arkin Ipac  (Sorting, Searching, Benchmark, Integration)
-// Presented in: Slide 13 (Kahlil Mendoza) - results and x5 vs x25 growth.
-//               Arkin Ipac answers questions on how it was measured.
-// What it does: Times our sorts and searches on 100 / 500 / 1,000 / 5,000
-//               records to check the Big-O values with real numbers.
-// Used by: BenchmarkPanel, Main
-
-
 package benchmark;
 
 import db.DatasetImporter;
@@ -21,36 +11,24 @@ import java.util.Random;
 import model.Equipment;
 import service.EquipmentStore;
 
-// Times our sorting and searching algorithms with System.nanoTime() on 100, 500, 1,000
-// and 5,000 records, so the Big-O values in our report are backed by real measurements.
-//
-// How we keep it fair:
-//   - in each comparison, every algorithm gets the SAME records and the SAME size
-//   - warm-up first: Java compiles frequently used code while the program runs (JIT),
-//     so the first run is always slower; we run everything once without timing it
-//   - sorts = average of 3 runs; searches = median of 5 passes of 1,000 lookups
-//   - binary search gets an array that is already sorted; the sorting is not timed
-//   - a fixed random seed picks the search targets, so every rerun searches the same IDs
-//
-// Read the growth, not the exact nanoseconds (those depend on the laptop):
-// 1,000 -> 5,000 records is x5 data. Linear search grew about x5 (O(n)),
-// bubble sort about x25 (O(n^2)), binary search barely moved (O(log n)),
-// hash lookups stayed flat (O(1)).
-//
-// Can be run on its own (main), from the console demo (run), or from the UI (measure).
+// Times the sorts and searches on 100, 500, 1,000 and 5,000 records to check the Big-O
+// values with real numbers. To keep it fair: every algorithm gets the same records, there's
+// an untimed warm-up first (Java's JIT makes the first run slow), sorts are averaged over
+// 3 runs, searches take the median of 5 passes, and a fixed seed picks the search targets.
+// Look at how the times grow, not the exact numbers, which depend on the computer.
 public class Benchmark {
 
     public static final int[] SIZES = {100, 500, 1000, 5000};
-    private static final int SORT_REPEATS = 3;          // averaged sort runs per size
-    private static final int SEARCHES = 1000;           // lookups per search strategy per size
-    private static final int SEARCH_PASSES = 5;         // timed passes per search; the median is kept
+    private static final int SORT_REPEATS = 3;
+    private static final int SEARCHES = 1000;           // lookups per strategy per size
+    private static final int SEARCH_PASSES = 5;         // the median pass is kept
     private static final long SEED = 20260927L;         // same seed as the dataset generator
     private static final String RESULTS_FILE = "benchmarks/benchmark_results.csv";
 
-    // Results are added to this variable so Java can't decide the work is unused and skip it.
+    // Results go here so the JIT can't treat the work as unused and skip it.
     private static long sink;
 
-    // One row of results: the timings for a single dataset size.
+    // Timings for one dataset size.
     public static class Row {
         public final int size;
         public final double bubbleMs, insertionMs, insertionIdMs;          // sorts, milliseconds
@@ -69,10 +47,9 @@ public class Benchmark {
         }
     }
 
-    // Runs every benchmark and returns one Row per size (sizes larger than the data are skipped).
-    // Also saves the results to benchmarks/benchmark_results.csv.
+    // One Row per size (sizes bigger than the data are skipped). Also saves the CSV.
     public static Row[] measure(Equipment[] data) {
-        warmUp(data);   // untimed full pass first, so the JVM has compiled everything before we measure
+        warmUp(data);
 
         int usable = 0;
         for (int n : SIZES) if (n <= data.length) usable++;
@@ -82,19 +59,17 @@ public class Benchmark {
         for (int n : SIZES) {
             if (n > data.length) continue;
 
-            // A separate store with only the first n records, so the app's real data
-            // is not affected.
+            // A separate store with the first n records, so the app's data isn't touched.
             EquipmentStore store = new EquipmentStore();
             for (int i = 0; i < n; i++) store.addEquipment(data[i]);
 
-            // ---- Sorting: bubble vs insertion on the same key (usage count) ----
+            // Bubble vs insertion on the same key (usage).
             double bubbleMs = timeSortMs(() -> store.sortByUsageCountBubble(true));
             double insertMs = timeSortMs(() -> store.sortByUsageCountInsertion(true));
-            // Insertion sort by ID: the data is already in ID order, so this shows
-            // insertion sort's O(n) best case.
+            // The data is already in ID order, so this shows insertion sort's O(n) best case.
             double insertIdMs = timeSortMs(() -> store.sortByIdInsertion(true));
 
-            // ---- Searching: same targets for every strategy ----
+            // Same targets for every search strategy.
             Random random = new Random(SEED);
             String[] ids = new String[SEARCHES];
             int[] usages = new int[SEARCHES];
@@ -103,7 +78,7 @@ public class Benchmark {
                 ids[i] = target.getEquipmentId();
                 usages[i] = target.getUsageCount();
             }
-            Equipment[] sortedById = store.sortByIdInsertion(true);   // prepared BEFORE timing
+            Equipment[] sortedById = store.sortByIdInsertion(true);   // not timed
 
             double linearNs = timeSearchNs(() -> { for (String id : ids) count(store.linearSearchById(id)); });
             double binaryNs = timeSearchNs(() -> { for (String id : ids) count(store.binarySearchById(sortedById, id)); });
@@ -116,7 +91,7 @@ public class Benchmark {
         return rows;
     }
 
-    // Same measurements, formatted as a text table (used by the console demo in Main).
+    // Same measurements as a text table.
     public static String run(Equipment[] data) {
         Row[] rows = measure(data);
         StringBuilder report = new StringBuilder();
@@ -135,9 +110,7 @@ public class Benchmark {
         return report.toString();
     }
 
-    // Timing helpers
-
-    // One warm-up run (not counted), then the average of SORT_REPEATS timed runs, in ms.
+    // Average of SORT_REPEATS runs after one warm-up, in ms.
     private static double timeSortMs(SortTask task) {
         sink += task.run().length;                       // warm-up
         long total = 0;
@@ -150,10 +123,8 @@ public class Benchmark {
         return total / (double) SORT_REPEATS / 1_000_000.0;
     }
 
-    // One warm-up pass, then SEARCH_PASSES timed passes over all SEARCHES lookups.
-    // Returns ns per lookup from the MEDIAN pass. One pass can be slowed down by something
-    // in the background (garbage collection, other apps). The median ignores one bad pass;
-    // an average would be pulled up by it.
+    // ns per lookup from the median pass. A pass slowed down by garbage collection or
+    // another app would drag an average up; the median ignores it.
     private static double timeSearchNs(Runnable searches) {
         searches.run();                                   // warm-up
         long[] passes = new long[SEARCH_PASSES];
@@ -162,7 +133,7 @@ public class Benchmark {
             searches.run();
             passes[p] = System.nanoTime() - start;
         }
-        for (int i = 1; i < passes.length; i++) {        // tiny insertion sort to find the median
+        for (int i = 1; i < passes.length; i++) {        // sort the 5 passes to find the median
             long key = passes[i];
             int j = i - 1;
             while (j >= 0 && passes[j] > key) { passes[j + 1] = passes[j]; j--; }
@@ -171,9 +142,7 @@ public class Benchmark {
         return passes[SEARCH_PASSES / 2] / (double) SEARCHES;
     }
 
-    // Runs everything a few times on the full data without recording anything.
-    // Without this, n = 100 (measured first) would include Java's warm-up time
-    // and look slower than it really is.
+    // Untimed runs so n = 100, measured first, doesn't include Java's warm-up time.
     private static void warmUp(Equipment[] data) {
         EquipmentStore store = new EquipmentStore();
         for (Equipment e : data) store.addEquipment(e);
@@ -195,12 +164,10 @@ public class Benchmark {
         if (found != null) sink++;
     }
 
-    // Lets us pass a sort method as a lambda, e.g. () -> store.sortByIdInsertion(true).
+    // So a sort can be passed as a lambda, e.g. () -> store.sortByIdInsertion(true).
     private interface SortTask {
         Equipment[] run();
     }
-
-    // Saving results
 
     private static void saveCsv(Row[] rows) {
         StringBuilder csv = new StringBuilder("size,bubble_usage_ms,insertion_usage_ms,insertion_id_ms,"
@@ -220,9 +187,7 @@ public class Benchmark {
 
     public static String getResultsFile() { return RESULTS_FILE; }
 
-    // Theoretical complexity (shown next to the measured results)
-
-    // {operation, structure, best, average, worst, space}
+    // Theoretical complexity: {operation, structure, best, average, worst, space}
     public static final String[][] COMPLEXITY = {
         {"Search by ID",      "Hash table",     "O(1)",     "O(1)",     "O(n)",     "O(n)"},
         {"Search by ID",      "Array, linear",  "O(1)",     "O(n)",     "O(n)",     "O(1)"},
@@ -249,8 +214,7 @@ public class Benchmark {
         return sb.toString();
     }
 
-    // Standalone run
-    // Loads from MySQL; falls back to the CSV if the database isn't reachable.
+    // Run on its own: MySQL first, the CSV if the database isn't reachable.
     public static void main(String[] args) {
         List<Equipment> list;
         try {

@@ -4,17 +4,9 @@ CCDATRCL Data Structures and Algorithms · Section ITE-201 · Java (custom data 
 
 A system that lets gym staff register, search and delete equipment, flag broken machines, and always service the most urgent one first. Flagged equipment waits in a FIFO queue, then a max-heap ranks it by **priority = severity × 10,000 + usage count**. Every service is logged to a linked-list history. The floor plan is a graph, so BFS gives the technician the fewest-hop route.
 
-## Group and parts
+## Team
 
-| Member | Part | Main classes | Presents |
-|---|---|---|---|
-| Jay Mark Lampa | Queue + Linked List | `CustomQueue`, `CustomLinkedList`, `MaintenanceRecord` | Slide 1 |
-| Krissy Gomez | Heap + Priority | `CustomHeap`, `MaintenanceManager` | Slides 2, 14 |
-| Kahlil Mendoza | Hash Table + Graph representation + dataset | `CustomHashTable`, `CustomGraph` (adjacency list), `GymFloorPlan` | Slides 3, 13, 15 |
-| Rhobe Arkin Ipac | BFS/DFS, Sorting, Searching, Benchmark, Integration | `EquipmentStore`, `CustomGraph` (BFS/DFS), `Benchmark`, `db/*`, `web/*`, `Main` | Slides 4, 5–8 (live demo), 9–10, 12 |
-| John Benedict Jesalva | BST | `CustomBST`, usage index in `EquipmentStore` | Slide 11 |
-
-The Swing UI used at the defense (`ui.MainFrame` and its panels) was replaced by the web UI below. It is still in the git history: commit "Final defense version".
+Jay Mark Lampa · Krissy Gomez · Kahlil Mendoza · Rhobe Arkin Ipac · John Benedict Jesalva
 
 ## Project layout
 
@@ -57,4 +49,4 @@ Press **Ctrl + K** anywhere to search equipment.
 
 If MySQL isn't running or `db.properties` is missing, the app still opens using the CSV and shows **Offline · CSV data** in the sidebar. Changes are not saved in that mode.
 
-The port comes from the `PORT` environment variable when it's set (Azure App Service sets it), otherwise 8080. The console demo used for the defense test cases (old `Main`) is in the git history.
+The port comes from the `PORT` environment variable when it's set (Azure App Service sets it), otherwise 8080.

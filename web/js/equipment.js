@@ -1,6 +1,5 @@
-// equipment.js
-// Equipment page: category folder tabs, search, the inventory table, and a side panel
-// that shows the selected machine (flag / edit / delete / history) or the register form.
+// Equipment page: category tabs, search, the inventory table and a side panel for the
+// selected machine or the register form.
 
 App.pages.equipment = (() => {
   const PAGE = 25;
@@ -63,7 +62,7 @@ App.pages.equipment = (() => {
     renderPanel();
   }
 
-  // ---------- table ----------
+  // table
   async function load() {
     const q = encodeURIComponent($("#eqSearch").value.trim());
     const r = await api(`/api/equipment?q=${q}&category=${category}&offset=${offset}&limit=${PAGE}`);
@@ -101,7 +100,7 @@ App.pages.equipment = (() => {
     renderPanel();
   }
 
-  // Used by Ctrl+K: show exactly this ID.
+  // Used by Ctrl+K search.
   async function focusOn(id) {
     setCategory("");
     $("#eqSearch").value = id;
@@ -112,7 +111,7 @@ App.pages.equipment = (() => {
 
   function newItem() { selected = null; editing = false; mode = "form"; renderPanel(); $("#eqPanel [name=id]").focus(); }
 
-  // ---------- side panel ----------
+  // side panel
   function renderPanel() {
     const p = $("#eqPanel");
     if (mode === "form") {

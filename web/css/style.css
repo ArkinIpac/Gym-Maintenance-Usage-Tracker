@@ -1,9 +1,6 @@
-/* Lime Gym · Glass Lime
-   Black + lime, frosted glass panels, folder-shaped cards, lime gradients and motion.
-   Sections: tokens · base · background · layout · glass · folders · buttons · forms ·
-             tables · pills · page pieces · overlays · motion · responsive */
+/* Lime Gym styles: black and lime, frosted glass panels and folder-shaped cards. */
 
-/* ============ Tokens ============ */
+/* Tokens */
 :root {
   --bg: #0A0A0A;
   --text: #FFFFFF;
@@ -25,7 +22,7 @@
   --amber: #FFFFFF; --amber-bg: rgba(255, 255, 255, .08);
   --green: #C8FF00;
 
-  /* condition scale (green -> red), same order as Equipment.Condition */
+  /* condition scale, same order as Equipment.Condition */
   --c-EXCELLENT: #C8FF00;
   --c-GOOD: #8CB300;
   --c-FAIR: #BDBDBD;
@@ -46,7 +43,7 @@
   --f-mono: "Geist Mono", "Cascadia Mono", Consolas, monospace;
 }
 
-/* ============ Base ============ */
+/* Base */
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
@@ -66,7 +63,7 @@ a { color: var(--lime); }
 .skip { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 16px; border-radius: 12px; background: var(--lime); color: var(--on-lime); font-weight: 700; }
 .skip:focus { top: 12px; }
 
-/* ============ Background (what the glass blurs) ============ */
+/* Background */
 .backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
 .orb { position: absolute; border-radius: 50%; filter: blur(90px); animation: drift 22s ease-in-out infinite alternate; }
 .orb.one   { width: 640px; height: 640px; top: -260px; left: 10%;  background: rgba(200, 255, 0, .13); }
@@ -80,7 +77,7 @@ a { color: var(--lime); }
   mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 80%);
 }
 
-/* ============ Layout ============ */
+/* Layout */
 .shell { display: flex; gap: 20px; padding: 20px; min-height: 100vh; }
 .sidebar {
   position: sticky; top: 20px; align-self: flex-start;
@@ -136,7 +133,7 @@ a { color: var(--lime); }
 .s6 { grid-column: span 6; } .s7 { grid-column: span 7; } .s8 { grid-column: span 8; } .s12 { grid-column: 1 / -1; }
 .stretch { align-self: stretch; }
 
-/* ============ Glass ============ */
+/* Glass */
 .glass {
   background: linear-gradient(150deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .018));
   -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur);
@@ -163,7 +160,7 @@ a { color: var(--lime); }
 }
 .glow > * { position: relative; }
 
-/* ============ Folders (tab + body drawn as one shape) ============ */
+/* Folders: tab and body drawn as one shape */
 .folder { position: relative; padding-top: 41px; min-width: 0; }
 .folder-tab {
   position: absolute; top: 0; left: 0; z-index: 1; height: 42px; width: var(--tab, 200px);
@@ -198,7 +195,7 @@ a { color: var(--lime); }
 .ftab.active { background: var(--grad-lime); color: var(--on-lime); border-color: transparent; }
 .ftab.active .mono { color: var(--on-lime); }
 
-/* ============ Buttons ============ */
+/* Buttons */
 .btn {
   position: relative; overflow: hidden;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -225,7 +222,7 @@ a { color: var(--lime); }
 .btn.block { width: 100%; }
 .icon-btn { width: 44px; height: 44px; padding: 0; }
 
-/* ============ Forms ============ */
+/* Forms */
 .field { display: flex; flex-direction: column; gap: 6px; }
 .input, .select {
   height: 48px; width: 100%; padding: 0 14px; border-radius: 14px;
@@ -253,7 +250,7 @@ a { color: var(--lime); }
 .inline-input:focus-within { border-color: var(--lime); box-shadow: 0 0 0 4px rgba(200, 255, 0, .12); }
 .kbd { font: 11px var(--f-mono); padding: 3px 7px; border-radius: 7px; border: 1px solid var(--glass-line-2); color: var(--text-3); }
 
-/* ============ Tables ============ */
+/* Tables */
 .table-wrap { overflow: auto; border-radius: var(--r-lg); }
 table { width: 100%; border-collapse: collapse; }
 th {
@@ -272,7 +269,7 @@ tbody tr.selected { background: rgba(200, 255, 0, .08); box-shadow: inset 3px 0 
 .num { text-align: right; font-variant-numeric: tabular-nums; }
 .empty { text-align: center; padding: 40px 16px; color: var(--text-3); white-space: normal; }
 
-/* ============ Pills & bars ============ */
+/* Pills & bars */
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
 .pill.cond::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .pill.glassy { background: var(--glass); border: 1px solid var(--glass-line); font-weight: 500; color: var(--text-2); }
@@ -293,7 +290,7 @@ tbody tr.selected { background: rgba(200, 255, 0, .08); box-shadow: inset 3px 0 
 .gtext { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .big-num { font: 800 132px/.85 var(--f-display); letter-spacing: -6px; }
 
-/* ============ Page pieces ============ */
+/* Page pieces */
 /* hero */
 .hero { min-height: 330px; display: flex; flex-direction: column; justify-content: space-between; gap: 22px; }
 .hero-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 22px; }
@@ -390,7 +387,7 @@ tbody tr.selected { background: rgba(200, 255, 0, .08); box-shadow: inset 3px 0 
 /* skeleton shimmer while data loads */
 .skel { border-radius: 12px; background: linear-gradient(90deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .09), rgba(255, 255, 255, .04)); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
 
-/* ============ Overlays ============ */
+/* Overlays */
 .toasts { position: fixed; right: 24px; bottom: 24px; z-index: 80; display: flex; flex-direction: column; gap: 10px; width: min(380px, calc(100vw - 32px)); }
 .toast { border-radius: var(--r-md); padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; font-size: 14px; animation: toast-in .35s var(--ease) both; }
 .toast.out { animation: toast-out .25s ease forwards; }
@@ -414,7 +411,7 @@ tbody tr.selected { background: rgba(200, 255, 0, .08); box-shadow: inset 3px 0 
 /* phone bottom nav (hidden on desktop) */
 .tabbar { display: none; }
 
-/* ============ Motion ============ */
+/* Motion */
 .rise { animation: rise .8s var(--ease) both; }
 .page.active > * { animation: rise .7s var(--ease) both; }
 .page.active > *:nth-child(2) { animation-delay: .06s; }
@@ -445,7 +442,7 @@ tbody tr.selected { background: rgba(200, 255, 0, .08); box-shadow: inset 3px 0 
   .orb, .flow, .dot.live::after, .btn.lime::after, .skel { animation: none !important; }
 }
 
-/* ============ Responsive ============ */
+/* Responsive */
 @media (max-width: 1180px) {
   .s3, .s4, .s5, .s6, .s7, .s8 { grid-column: 1 / -1; }
   .big-num { font-size: 104px; }

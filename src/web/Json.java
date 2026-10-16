@@ -1,26 +1,18 @@
-// Json.java
-// Part of: Arkin Ipac  (Integration / web version)
-// What it does: Builds JSON text by hand for the web API, so we don't need an
-//               extra library (Gson, Jackson...). Only the few things we use.
-// Used by: ApiRoutes
-
 package web;
 
 import model.Equipment;
 import model.MaintenanceRecord;
 
-// A tiny JSON writer. Example:
+// A small JSON writer so we don't need a library. It handles the commas for us:
 //   new Json().obj().key("count").val(5000).key("online").val(true).end()
 //   -> {"count":5000,"online":true}
-// It keeps track of commas for us: every value after the first one in an
-// object or array gets a comma in front of it.
 public class Json {
 
     private final StringBuilder sb = new StringBuilder();
-    // needsComma[depth] = true once something was written at that depth
+    // true once something was written at that depth
     private final boolean[] needsComma = new boolean[32];
     private int depth = 0;
-    private boolean afterKey = false;   // a key was just written, so the next value needs no comma
+    private boolean afterKey = false;   // a value right after a key needs no comma
 
     private void beforeValue() {
         if (afterKey) { afterKey = false; return; }
@@ -28,7 +20,7 @@ public class Json {
         if (depth > 0) needsComma[depth] = true;
     }
 
-    // closers[depth] = the bracket that closes what was opened at that depth
+    // the bracket that closes each open level
     private final char[] closers = new char[32];
 
     public Json obj() { beforeValue(); sb.append('{'); closers[++depth] = '}'; needsComma[depth] = false; return this; }
@@ -55,7 +47,6 @@ public class Json {
     public Json put(String k, double v) { return key(k).val(v); }
     public Json put(String k, boolean v) { return key(k).val(v); }
 
-    // One equipment as a JSON object (used by almost every endpoint).
     public Json equipment(Equipment e) {
         return obj()
                 .put("id", e.getEquipmentId())
@@ -77,7 +68,7 @@ public class Json {
                 .end();
     }
 
-    // Writes a string with quotes, escaping the characters JSON doesn't allow raw.
+    // Quotes a string and escapes what JSON doesn't allow raw.
     private void str(String s) {
         sb.append('"');
         for (int i = 0; i < s.length(); i++) {

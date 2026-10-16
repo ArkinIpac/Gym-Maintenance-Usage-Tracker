@@ -1,6 +1,4 @@
-// benchmark.js
-// Benchmarks: runs benchmark.Benchmark on the server, then shows the timings as
-// a table and two charts, next to the theoretical Big-O table.
+// Benchmarks page: runs the Java benchmark and shows the timings next to the Big-O table.
 
 App.pages.benchmark = (() => {
   const SORTS = [["bubbleMs", "Bubble", "#5C5C5C"], ["insertionMs", "Insertion", "#FFFFFF"], ["insertionIdMs", "Insertion by ID", "#C8FF00"]];
@@ -62,7 +60,7 @@ App.pages.benchmark = (() => {
     chart("#bmSearch", r.rows, SEARCHES, true, (v) => fmt(Math.round(v)) + " ns");
   }
 
-  // Grouped bars (one group per record count). Bars grow up with a staggered animation.
+  // Grouped bars, one group per record count.
   function chart(sel, rows, series, logScale, label) {
     const W = 520, H = 260, left = 56, bottom = 30, top = 12, plotH = H - top - bottom, plotW = W - left - 10;
     const vals = rows.flatMap((r) => series.map(([k]) => Math.max(r[k], 0.001)));

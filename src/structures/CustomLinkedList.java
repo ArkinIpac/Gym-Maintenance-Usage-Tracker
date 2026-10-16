@@ -1,31 +1,11 @@
-
-// CustomLinkedList.java
-// Part of: Jay Mark Lampa  (Queue and Linked List)
-// Presented in: Slides 5-8 (John Benedict Jesalva) - history linked list.
-// What it does: Singly linked list. Holds each machine's service history,
-//               the recently serviced list, BST buckets, and graph neighbors.
-// Used by: MaintenanceManager, CustomBST, CustomGraph
-
-
 package structures;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-// Our own singly linked list (we do not use java.util.LinkedList).
-// Each node only knows the NEXT node, not the previous one.
-//
-// Where we use it:
-//   - each equipment's maintenance history (MaintenanceManager), oldest record first
-//   - the "recently serviced" list, newest first, capped at 10 (MaintenanceManager)
-//   - the bucket inside each BST node, for machines with the same usage count (CustomBST)
-//   - the neighbor list of each zone, plus BFS/DFS results (CustomGraph)
-//
-// Why a linked list here and not an array: these lists grow one item at a time and we
-// add at the front or back, which is O(1) with head/tail pointers. An array would need
-// resizing, and adding at the front would shift every element.
-//
-// It implements Iterable so we can write: for (MaintenanceRecord r : history) { ... }
+// Singly linked list with head and tail pointers.
+// Used for service histories, the "recently serviced" list, BST buckets and graph neighbors.
+// Iterable, so it works in for-each loops.
 public class CustomLinkedList<T> implements Iterable<T> {
 
     private class Node {
@@ -34,39 +14,32 @@ public class CustomLinkedList<T> implements Iterable<T> {
         Node(T data) { this.data = data; }
     }
 
-    private Node head;  // first node
-    private Node tail;  // last node, kept so add() does not have to walk the whole list
+    private Node head;
+    private Node tail;  // kept so add() doesn't walk the whole list
     private int size;
 
-    // ---------- Insert ----------
-
-    // Add at the end. O(1) because we jump straight to tail.
-    // Used for history logs so the oldest service stays first.
+    // Add at the end, O(1). History logs use this so the oldest record stays first.
     public void add(T data) {
         Node newNode = new Node(data);
         if (head == null) {
-            head = newNode;          // empty list: new node is both head and tail
+            head = newNode;
         } else {
-            tail.next = newNode;     // link the old last node to the new one
+            tail.next = newNode;
         }
         tail = newNode;
         size++;
     }
 
-    // Add at the front. O(1).
-    // Used for the "recently serviced" list so the newest service is shown first.
+    // Add at the front, O(1). "Recently serviced" uses this so the newest is first.
     public void addFirst(T data) {
         Node newNode = new Node(data);
         newNode.next = head;
         head = newNode;
-        if (tail == null) tail = newNode;   // list was empty, so this node is also the tail
+        if (tail == null) tail = newNode;
         size++;
     }
 
-    // Search 
-
-    // O(n): start at head and check each node. Returns -1 if not found
-    // (instead of throwing), so the caller can just show "not found".
+    // O(n). Returns -1 when not found.
     public int indexOf(T target) {
         Node current = head;
         int index = 0;
@@ -82,7 +55,7 @@ public class CustomLinkedList<T> implements Iterable<T> {
         return indexOf(target) != -1;
     }
 
-    // O(n): no index access like an array, so we walk 'index' steps from head.
+    // O(n): no random access, so we walk from the head.
     public T get(int index) {
         if (index < 0 || index >= size) throw new IndexOutOfBoundsException("Index: " + index);
         Node current = head;
@@ -90,22 +63,16 @@ public class CustomLinkedList<T> implements Iterable<T> {
         return current.data;
     }
 
-    // Delete 
-
-    // O(n): find the first node holding 'target' and unlink it. Returns false if missing.
-    // We keep 'prev' while walking because, in a singly linked list, the only way to
-    // remove a node is to make the node BEFORE it skip over it.
-    //   Case 1: target is the head   -> head moves to the second node
-    //   Case 2: target is in the middle -> prev.next skips over it
-    //   Case 3: target is the tail   -> same as case 2, and tail moves back to prev
+    // O(n). Removes the first match. We track prev because the only way to unlink a node
+    // in a singly linked list is to make the node before it skip over it.
     public boolean remove(T target) {
         Node prev = null;
         Node current = head;
         while (current != null) {
             if (current.data.equals(target)) {
-                if (prev == null) head = current.next;   // case 1
-                else prev.next = current.next;           // case 2 and 3
-                if (current == tail) tail = prev;        // case 3: fix the tail pointer
+                if (prev == null) head = current.next;
+                else prev.next = current.next;
+                if (current == tail) tail = prev;
                 size--;
                 return true;
             }
@@ -115,15 +82,13 @@ public class CustomLinkedList<T> implements Iterable<T> {
         return false;
     }
 
-    // Remove the last node. This is O(n), not O(1): the tail does not know the node
-    // before it, so we walk from head to the second-to-last node. (A doubly linked list
-    // would make this O(1), but we only call it once per service, on a list of 11 items.)
-    // Used to keep the "recently serviced" list at 10: the oldest entry falls off the end.
+    // O(n): the tail doesn't know the node before it, so we walk to it.
+    // Fine here: it only runs once per service, on a list of at most 11 items.
     public T removeLast() {
         if (head == null) throw new NoSuchElementException("List is empty.");
         T data = tail.data;
         if (head == tail) {
-            head = tail = null;                          // only one node: list becomes empty
+            head = tail = null;
         } else {
             Node current = head;
             while (current.next != tail) current = current.next;
@@ -137,9 +102,6 @@ public class CustomLinkedList<T> implements Iterable<T> {
     public int size() { return size; }
     public boolean isEmpty() { return size == 0; }
 
-    // Traversal 
-
-    // Walks from head to tail, one node at a time. This is what for-each loops call.
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {

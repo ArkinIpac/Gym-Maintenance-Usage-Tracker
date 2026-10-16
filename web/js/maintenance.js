@@ -1,6 +1,4 @@
-// maintenance.js
-// Maintenance page: the 3-step workflow as three folders.
-//   01 QUEUE (FIFO)  --promote-->  02 PRIORITY HEAP  --extractMax-->  03 SERVICED (linked list)
+// Maintenance page: queue -> heap -> serviced, one folder each.
 
 App.pages.maintenance = (() => {
   const COND_TEXT = { EXCELLENT: "#C8FF00", GOOD: "#A8D100", FAIR: "#BDBDBD", POOR: "#FFAA5C", CRITICAL: "#FF7A7A" };
