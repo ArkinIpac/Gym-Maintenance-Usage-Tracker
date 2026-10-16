@@ -1,4 +1,4 @@
-# GymCare · Gym Equipment Maintenance Prioritization System
+# Lime Gym · Gym Equipment Maintenance Prioritization System
 
 CCDATRCL Data Structures and Algorithms · Section ITE-201 · Java (custom data structures, MySQL) + web UI (HTML/CSS/JS)
 

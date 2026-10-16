@@ -74,7 +74,7 @@ public class WebServer {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/", this::handle);
         server.start();
-        System.out.println("GymCare web app running at http://localhost:" + port);
+        System.out.println("Lime Gym web app running at http://localhost:" + port);
     }
 
     private void handle(HttpExchange ex) throws IOException {

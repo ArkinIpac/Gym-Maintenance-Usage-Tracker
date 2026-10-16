@@ -179,7 +179,7 @@ function showPage(key) {
   $("#pageEyebrow").textContent = typeof page.eyebrow === "function" ? page.eyebrow() : page.eyebrow;
   $("#headActions").innerHTML = page.actions ? page.actions() : "";
   if (page.bindActions) page.bindActions();
-  document.title = page.title + " · GymCare";
+  document.title = page.title + " · Lime Gym";
   if (page.onShow) page.onShow();
 }
 
